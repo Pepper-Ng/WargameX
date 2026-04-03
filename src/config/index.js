@@ -4,10 +4,21 @@ module.exports = {
   port: process.env.PORT || 3000,
   dbPath: process.env.DB_PATH || path.join(__dirname, '../../data/wargamex.sqlite'),
   map: {
-    resourceAmountMin: 50,
-    resourceAmountMax: 300,
-    regenerationRateMin: 1,
-    regenerationRateMax: 10,
+    seed: process.env.MAP_SEED || 'wargamex-seed',
+    initialSize: 100,
+    maxRangePerRequest: 20,
+    tileTypeWeights: {
+      water: 0.12,
+      rock: 0.08,
+      wood: 0.22,
+      normal: 0.58,
+    },
+    resourcesByType: {
+      water: { min: 10, max: 50, regenMin: 1, regenMax: 2 },
+      rock: { min: 40, max: 140, regenMin: 1, regenMax: 3 },
+      wood: { min: 80, max: 240, regenMin: 2, regenMax: 6 },
+      normal: { min: 50, max: 180, regenMin: 1, regenMax: 4 },
+    },
   },
   baseSpawnRange: 5,
 };

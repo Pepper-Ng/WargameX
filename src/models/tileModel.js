@@ -4,14 +4,14 @@ async function findTileByCoordinates(x, y) {
   return get('SELECT * FROM tiles WHERE x = ? AND y = ?', [x, y]);
 }
 
-async function createTile(x, y, resourceAmount, regenerationRate) {
-  const result = await run(
-    `INSERT INTO tiles (x, y, resource_amount, resource_regeneration_rate)
-     VALUES (?, ?, ?, ?)`,
-    [x, y, resourceAmount, regenerationRate]
+async function createTileIfMissing(x, y, resourceAmount, regenerationRate, tileType) {
+  await run(
+    `INSERT OR IGNORE INTO tiles (x, y, resource_amount, resource_regeneration_rate, tile_type)
+     VALUES (?, ?, ?, ?, ?)`,
+    [x, y, resourceAmount, regenerationRate, tileType]
   );
 
-  return get('SELECT * FROM tiles WHERE id = ?', [result.id]);
+  return findTileByCoordinates(x, y);
 }
 
 async function findTilesInRange(minX, maxX, minY, maxY) {
@@ -23,6 +23,6 @@ async function findTilesInRange(minX, maxX, minY, maxY) {
 
 module.exports = {
   findTileByCoordinates,
-  createTile,
+  createTileIfMissing,
   findTilesInRange,
 };

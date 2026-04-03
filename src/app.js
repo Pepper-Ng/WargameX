@@ -25,7 +25,8 @@ app.use(debugRoutes);
 app.use((err, req, res, next) => {
   console.error(err);
 
-  const status = err.message && err.message.toLowerCase().includes('not found') ? 404 : 400;
+  const status = err.status || (err.message && err.message.toLowerCase().includes('not found') ? 404 : 500);
+
   res.status(status).json({
     error: err.message || 'Unexpected server error',
   });

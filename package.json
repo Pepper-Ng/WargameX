@@ -5,6 +5,9 @@
   "main": "server.js",
   "type": "commonjs",
   "scripts": {
+    "test": "node --test",
+    "check": "node --check server.js && rg --files -g '*.js' src | xargs -n1 node --check && npm test",
+    "prestart": "npm test",
     "start": "node server.js",
     "dev": "node server.js"
   },

@@ -1,10 +1,11 @@
 const { createPlayer, findPlayerByUsername } = require('../models/playerModel');
 const { hashPassword, verifyPassword } = require('../utils/password');
+const { AppError } = require('../utils/errors');
 
 async function register(username, password) {
   const existing = await findPlayerByUsername(username);
   if (existing) {
-    throw new Error('Username is already taken');
+    throw new AppError('Username is already taken', 409);
   }
 
   const passwordHash = hashPassword(password);
@@ -16,7 +17,7 @@ async function register(username, password) {
 async function login(username, password) {
   const player = await findPlayerByUsername(username);
   if (!player || !verifyPassword(password, player.password_hash)) {
-    throw new Error('Invalid username or password');
+    throw new AppError('Invalid username or password', 401);
   }
 
   return {

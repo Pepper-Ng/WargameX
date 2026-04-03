@@ -10,10 +10,15 @@ router.get('/debug', (req, res) => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Wargame X Debug</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; max-width: 800px; }
+    body { font-family: Arial, sans-serif; margin: 20px; max-width: 980px; }
     button { margin: 4px 8px 4px 0; padding: 8px 12px; }
-    pre { background: #111; color: #0f0; padding: 12px; border-radius: 6px; white-space: pre-wrap; }
+    pre { background: #111; color: #0f0; padding: 12px; border-radius: 6px; white-space: pre-wrap; min-height: 200px; }
     .row { margin-bottom: 10px; }
+    #mapGrid { display: grid; grid-template-columns: repeat(11, 24px); gap: 2px; margin-top: 10px; }
+    .tile { width: 24px; height: 24px; border-radius: 2px; border: 1px solid #999; }
+    .legend { display: flex; gap: 12px; margin-top: 8px; font-size: 14px; }
+    .legend span { display: inline-flex; align-items: center; gap: 4px; }
+    .swatch { width: 12px; height: 12px; border: 1px solid #666; display: inline-block; }
   </style>
 </head>
 <body>
@@ -33,6 +38,13 @@ router.get('/debug', (req, res) => {
   </div>
 
   <pre id="output">Ready.</pre>
+  <div id="mapGrid"></div>
+  <div class="legend">
+    <span><i class="swatch" style="background:#4f9cff"></i>water</span>
+    <span><i class="swatch" style="background:#9a9a9a"></i>rock</span>
+    <span><i class="swatch" style="background:#3b8f3b"></i>wood</span>
+    <span><i class="swatch" style="background:#d9c27a"></i>normal</span>
+  </div>
 
   <script>
     const state = {
@@ -43,6 +55,14 @@ router.get('/debug', (req, res) => {
 
     const output = document.getElementById('output');
     const userLabel = document.getElementById('userLabel');
+    const mapGrid = document.getElementById('mapGrid');
+
+    const colorsByType = {
+      water: '#4f9cff',
+      rock: '#9a9a9a',
+      wood: '#3b8f3b',
+      normal: '#d9c27a',
+    };
 
     function setOutput(data) {
       output.textContent = JSON.stringify(data, null, 2);
@@ -52,6 +72,17 @@ router.get('/debug', (req, res) => {
       userLabel.textContent = state.username
         ? state.username + ' (id: ' + (state.playerId || 'unknown') + ')'
         : 'none';
+    }
+
+    function drawMap(tiles) {
+      mapGrid.innerHTML = '';
+      for (const tile of tiles) {
+        const div = document.createElement('div');
+        div.className = 'tile';
+        div.style.backgroundColor = colorsByType[tile.tileType] || '#ffffff';
+        div.title = 'x=' + tile.x + ', y=' + tile.y + ', type=' + tile.tileType;
+        mapGrid.appendChild(div);
+      }
     }
 
     async function callApi(url, method = 'GET', body) {
@@ -131,7 +162,10 @@ router.get('/debug', (req, res) => {
 
     document.getElementById('mapBtn').addEventListener('click', async () => {
       try {
-        const result = await callApi('/map?x=0&y=0&range=2');
+        const result = await callApi('/map?x=0&y=0&range=5');
+        if (result.status === 200 && result.data.tiles) {
+          drawMap(result.data.tiles);
+        }
         setOutput({ action: 'map', ...result });
       } catch (error) {
         setOutput({ action: 'map', error: error.message });

@@ -4,10 +4,10 @@ Minimal and extensible Node.js backend for the browser-based RTS prototype **War
 
 This project currently includes:
 - basic player registration/login
-- procedural map tile generation
+- deterministic seed-based procedural map generation with tile types
 - base and force creation
 - simple 1-second game loop tick
-- debug web page for quick manual testing
+- debug web page for quick manual testing (including colorized map)
 
 > No gameplay systems are implemented yet (no movement, no combat, no economy logic).
 
@@ -45,18 +45,6 @@ Use this flow:
 curl -X POST http://localhost:3000/register \
   -H "Content-Type: application/json" \
   -d '{"username":"player_one","password":"test123"}'
-```
-
-Example response:
-
-```json
-{
-  "player": {
-    "id": 1,
-    "username": "player_one",
-    "created_at": "2026-01-01 00:00:00"
-  }
-}
 ```
 
 ### 2) Login
@@ -101,15 +89,22 @@ curl "http://localhost:3000/map?x=0&y=0&range=5"
 - `GET /health`
 - `GET /debug`
 
-## Debug Web Page
+## Tile Types
 
-Open `http://localhost:3000/debug` in your browser.
+Current generated tile types:
+- `normal`
+- `wood`
+- `rock`
+- `water`
 
-Buttons provided:
-- Register (random username)
-- Login
-- Create Base
-- Create Force
-- Load Map
+Biome generation is deterministic from `map.seed` in `src/config/index.js`.
 
-Results are displayed as formatted JSON in a `<pre>` block for easy inspection.
+## Testing
+
+A minimal Node.js built-in test framework is included.
+
+```bash
+npm test
+```
+
+Tests currently cover deterministic biome generation and map query parsing behavior.
