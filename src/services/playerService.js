@@ -9,6 +9,7 @@ async function register(username, password) {
 
   const passwordHash = hashPassword(password);
   const player = await createPlayer(username, passwordHash);
+  console.log(`[player] registered username=${player.username} id=${player.id}`);
   return player;
 }
 

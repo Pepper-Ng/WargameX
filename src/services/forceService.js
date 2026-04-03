@@ -35,7 +35,9 @@ async function createBase(ownerId) {
   }
 
   await getTile(x, y);
-  return createForce(ownerId, x, y, 'base');
+  const base = await createForce(ownerId, x, y, 'base');
+  console.log(`[force] base_created ownerId=${ownerId} forceId=${base.id} x=${base.x} y=${base.y}`);
+  return base;
 }
 
 async function createNormalForce(ownerId) {
@@ -45,7 +47,9 @@ async function createNormalForce(ownerId) {
   const base = await findBaseByOwnerId(ownerId);
   if (!base) throw new Error('Player must create a base first');
 
-  return createForce(ownerId, base.x, base.y, 'normal');
+  const force = await createForce(ownerId, base.x, base.y, 'normal');
+  console.log(`[force] normal_created ownerId=${ownerId} forceId=${force.id} x=${force.x} y=${force.y}`);
+  return force;
 }
 
 module.exports = {
