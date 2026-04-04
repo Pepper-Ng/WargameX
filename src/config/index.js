@@ -8,10 +8,10 @@ module.exports = {
     initialSize: 100,
     maxRangePerRequest: 20,
     tileTypeWeights: {
-      water: 0.12,
-      rock: 0.08,
-      wood: 0.22,
-      normal: 0.58,
+      water: 0.16,
+      rock: 0.12,
+      wood: 0.30,
+      normal: 0.42,
     },
     resourcesByType: {
       water: { min: 10, max: 50, regenMin: 1, regenMax: 2 },

@@ -35,29 +35,36 @@ function smoothNoise(x, y, scale, seed, channel = 'base') {
 }
 
 function layeredNoise(x, y, seed) {
-  const broad = smoothNoise(x, y, 40, seed, 'broad');
-  const medium = smoothNoise(x, y, 16, seed, 'medium');
-  const detail = smoothNoise(x, y, 8, seed, 'detail');
+  const broad = smoothNoise(x, y, 36, seed, 'broad');
+  const medium = smoothNoise(x, y, 14, seed, 'medium');
+  const detail = smoothNoise(x, y, 6, seed, 'detail');
 
-  return broad * 0.55 + medium * 0.30 + detail * 0.15;
+  return broad * 0.5 + medium * 0.3 + detail * 0.2;
 }
 
 function getTileType(x, y) {
   const seed = config.map.seed;
   const terrainNoise = layeredNoise(x, y, seed);
-  const moisture = smoothNoise(x, y, 20, seed, 'moisture');
-  const riverBand = Math.abs(smoothNoise(x, y, 12, seed, 'river') - 0.5);
+  const moisture = smoothNoise(x, y, 18, seed, 'moisture');
+  const localVariation = smoothNoise(x, y, 4, seed, 'local-variation');
+  const riverBand = Math.abs(smoothNoise(x, y, 10, seed, 'river') - 0.5);
 
   // River bands create long connected water lines.
-  if (riverBand < 0.04 && moisture > 0.42) {
+  if (riverBand < 0.055 && moisture > 0.35) {
     return 'water';
   }
 
-  // Weighted thresholds are configurable from config.
-  const { water, rock, wood } = config.map.tileTypeWeights;
-  if (terrainNoise < water) return 'water';
-  if (terrainNoise > 1 - rock) return 'rock';
-  if (moisture > 1 - wood) return 'wood';
+  const thresholds = config.map.tileTypeWeights;
+
+  // Broad biome placement.
+  if (terrainNoise < thresholds.water + 0.06) return 'water';
+  if (terrainNoise > 1 - thresholds.rock - 0.05) return 'rock';
+  if (moisture > 1 - thresholds.wood - 0.08) return 'wood';
+
+  // Small-scale variation so local map slices are less uniform.
+  if (localVariation < 0.12) return 'rock';
+  if (localVariation > 0.86) return 'wood';
+  if (localVariation > 0.46 && localVariation < 0.51) return 'water';
 
   return 'normal';
 }

@@ -10,12 +10,12 @@ router.get('/debug', (req, res) => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Wargame X Debug</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; max-width: 980px; }
+    body { font-family: Arial, sans-serif; margin: 20px; max-width: 1100px; }
     button { margin: 4px 8px 4px 0; padding: 8px 12px; }
     pre { background: #111; color: #0f0; padding: 12px; border-radius: 6px; white-space: pre-wrap; min-height: 200px; }
     .row { margin-bottom: 10px; }
-    #mapGrid { display: grid; grid-template-columns: repeat(11, 24px); gap: 2px; margin-top: 10px; }
-    .tile { width: 24px; height: 24px; border-radius: 2px; border: 1px solid #999; }
+    #mapGrid { display: grid; grid-template-columns: repeat(41, 12px); gap: 0; margin-top: 10px; }
+    .tile { width: 12px; height: 12px; border-radius: 0; border: 0; }
     .legend { display: flex; gap: 12px; margin-top: 8px; font-size: 14px; }
     .legend span { display: inline-flex; align-items: center; gap: 4px; }
     .swatch { width: 12px; height: 12px; border: 1px solid #666; display: inline-block; }
@@ -162,7 +162,7 @@ router.get('/debug', (req, res) => {
 
     document.getElementById('mapBtn').addEventListener('click', async () => {
       try {
-        const result = await callApi('/map?x=0&y=0&range=5');
+        const result = await callApi('/map?x=0&y=0&range=20');
         if (result.status === 200 && result.data.tiles) {
           drawMap(result.data.tiles);
         }
