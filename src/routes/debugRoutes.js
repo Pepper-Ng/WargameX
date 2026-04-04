@@ -1,7 +1,8 @@
 const express = require('express');
+const fs = require('fs');
 const path = require('path');
 const config = require('../config');
-const { all } = require('../db/database');
+const { all, run } = require('../db/database');
 const { regenerateMap, getDatabaseVersion } = require('../db/init');
 const { getSeed, getMapSize } = require('../utils/mapSettings');
 
@@ -34,6 +35,65 @@ router.get('/debug/stats', async (req, res, next) => {
       databaseVersion: await getDatabaseVersion(),
       players: playersTree,
     });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.put('/debug/server-params', async (req, res, next) => {
+  try {
+    const chunkPrefetchRadius = Number.parseInt(req.body.chunkPrefetchRadius, 10);
+    const maxRangePerRequest = Number.parseInt(req.body.maxRangePerRequest, 10);
+
+    if (!Number.isNaN(chunkPrefetchRadius) && chunkPrefetchRadius >= 0 && chunkPrefetchRadius <= 6) {
+      config.map.chunkPrefetchRadius = chunkPrefetchRadius;
+    }
+
+    if (!Number.isNaN(maxRangePerRequest) && maxRangePerRequest >= 1 && maxRangePerRequest <= 100) {
+      config.map.maxRangePerRequest = maxRangePerRequest;
+    }
+
+    return res.json({
+      message: 'Server parameters updated',
+      serverParameters: {
+        maxRangePerRequest: config.map.maxRangePerRequest,
+        chunkPrefetchRadius: config.map.chunkPrefetchRadius,
+      },
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.delete('/debug/base/:id', async (req, res, next) => {
+  try {
+    await run("DELETE FROM forces WHERE id = ? AND type = 'base'", [req.params.id]);
+    return res.json({ message: 'Base deleted' });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.delete('/debug/force/:id', async (req, res, next) => {
+  try {
+    await run("DELETE FROM forces WHERE id = ? AND type != 'base'", [req.params.id]);
+    return res.json({ message: 'Force deleted' });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get('/debug/logs', async (req, res, next) => {
+  try {
+    const logPath = path.join(__dirname, '../../logs/server.log');
+    if (!fs.existsSync(logPath)) {
+      return res.json({ logs: '' });
+    }
+
+    const text = fs.readFileSync(logPath, 'utf8');
+    const lines = text.trim().split('\n');
+    const tail = lines.slice(Math.max(0, lines.length - 200)).join('\n');
+    return res.json({ logs: tail });
   } catch (error) {
     return next(error);
   }

@@ -126,3 +126,27 @@ test('integration: /debug/stats returns server params and db version', async (t)
   assert.ok(result.data.serverParameters);
   assert.ok(result.data.databaseVersion >= 1);
 });
+
+
+test('integration: /debug/server-params updates chunk prefetch', async (t) => {
+  if (!requireServerReady(t)) return;
+  const address = server.address();
+  const baseUrl = `http://127.0.0.1:${address.port}`;
+
+  const result = await requestJson(baseUrl, '/debug/server-params', 'PUT', {
+    chunkPrefetchRadius: 1,
+    maxRangePerRequest: 25,
+  });
+  assert.equal(result.status, 200);
+  assert.equal(result.data.serverParameters.chunkPrefetchRadius, 1);
+});
+
+test('integration: /debug/logs returns text payload', async (t) => {
+  if (!requireServerReady(t)) return;
+  const address = server.address();
+  const baseUrl = `http://127.0.0.1:${address.port}`;
+
+  const result = await requestJson(baseUrl, '/debug/logs');
+  assert.equal(result.status, 200);
+  assert.equal(typeof result.data.logs, 'string');
+});

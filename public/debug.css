@@ -6,6 +6,8 @@ pre { background: #111; color: #0f0; padding: 12px; border-radius: 6px; white-sp
 .split { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 #mapContainer { margin: 10px 0; border: 1px solid #ddd; padding: 8px; width: fit-content; }
 #mapGrid { display: grid; gap: 0; width: 600px; height: 600px; overflow: hidden; background: #111; }
+#xAxis { display: grid; grid-auto-flow: column; font-size: 10px; color: #333; margin-top: 2px; }
+#yAxis { position: absolute; left: -38px; top: 0; display: grid; font-size: 10px; color: #333; width: 34px; text-align: right; }
 .tile { position: relative; border: 0; }
 .tile.edge { background: repeating-linear-gradient(45deg,#333,#333 2px,#222 2px,#222 4px); }
 .tile.base::after {
@@ -20,7 +22,7 @@ pre { background: #111; color: #0f0; padding: 12px; border-radius: 6px; white-sp
   box-shadow: 0 0 2px #000;
 }
 .map-controls { display: grid; grid-template-columns: 40px auto 40px; grid-template-rows: 40px auto 40px; width: fit-content; }
-.map-center { grid-column: 2; grid-row: 2; }
+.map-center { grid-column: 2; grid-row: 2; position: relative; }
 .map-up { grid-column: 2; grid-row: 1; }
 .map-down { grid-column: 2; grid-row: 3; }
 .map-left { grid-column: 1; grid-row: 2; }
@@ -28,3 +30,4 @@ pre { background: #111; color: #0f0; padding: 12px; border-radius: 6px; white-sp
 .small { font-size: 12px; color: #555; }
 #statsTree details { border: 1px solid #ddd; margin-bottom: 6px; padding: 4px; }
 #statsTree .clickable { cursor: pointer; color: #005bbb; text-decoration: underline; }
+.inline-actions button { padding: 2px 6px; font-size: 11px; }
