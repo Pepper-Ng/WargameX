@@ -6,28 +6,25 @@ pre { background: #111; color: #0f0; padding: 12px; border-radius: 6px; white-sp
 .split { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 #mapContainer { margin: 10px 0; border: 1px solid #ddd; padding: 8px; width: fit-content; }
 #mapGrid { display: grid; gap: 0; width: 600px; height: 600px; overflow: hidden; background: #111; }
-#xAxis { display: grid; grid-auto-flow: column; font-size: 10px; color: #333; margin-top: 2px; }
-#yAxis { position: absolute; left: -38px; top: 0; display: grid; font-size: 10px; color: #333; width: 34px; text-align: right; }
+#xAxis { display: grid; grid-auto-flow: column; font-size: 10px; color: #333; }
+#yAxis { display: grid; font-size: 10px; color: #333; width: 34px; text-align: right; }
+.axis-label { font-size: 12px; font-weight: bold; color: #333; }
+.axis-label.y { grid-column: 1; grid-row: 1; }
+.axis-label.x { grid-column: 1; grid-row: 2; align-self: center; }
 .tile { position: relative; border: 0; }
 .tile.edge { background: repeating-linear-gradient(45deg,#333,#333 2px,#222 2px,#222 4px); }
-.tile.base::after {
-  content: '';
-  position: absolute;
-  width: 50%;
-  height: 50%;
-  border-radius: 50%;
-  background: #ff2a2a;
-  top: 25%;
-  left: 25%;
-  box-shadow: 0 0 2px #000;
-}
-.map-controls { display: grid; grid-template-columns: 40px auto 40px; grid-template-rows: 40px auto 40px; width: fit-content; }
-.map-center { grid-column: 2; grid-row: 2; position: relative; }
+.tile.base::after { content: ''; position: absolute; width: 50%; height: 50%; border-radius: 50%; background: #ff2a2a; top: 25%; left: 25%; box-shadow: 0 0 2px #000; }
+.map-controls { display: grid; grid-template-columns: 44px auto 44px; grid-template-rows: 44px auto 44px; width: fit-content; align-items: center; }
+.map-center { grid-column: 2; grid-row: 2; display: grid; grid-template-columns: 34px auto; grid-template-rows: auto 18px; column-gap: 6px; row-gap: 2px; }
 .map-up { grid-column: 2; grid-row: 1; }
 .map-down { grid-column: 2; grid-row: 3; }
 .map-left { grid-column: 1; grid-row: 2; }
 .map-right { grid-column: 3; grid-row: 2; }
-.small { font-size: 12px; color: #555; }
+.legend { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; font-size: 12px; }
+.swatch { width: 12px; height: 12px; display: inline-block; border: 1px solid #777; margin-right: 4px; }
+.small { font-size: 12px; color: #555; margin-top: 4px; }
 #statsTree details { border: 1px solid #ddd; margin-bottom: 6px; padding: 4px; }
 #statsTree .clickable { cursor: pointer; color: #005bbb; text-decoration: underline; }
 .inline-actions button { padding: 2px 6px; font-size: 11px; }
+.params-table { border-collapse: collapse; margin-bottom: 8px; }
+.params-table th, .params-table td { border: 1px solid #ccc; padding: 4px 8px; }

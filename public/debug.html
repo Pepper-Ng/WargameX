@@ -23,12 +23,22 @@
       <button class="map-up" id="upBtn">▲</button>
       <button class="map-left" id="leftBtn">◀</button>
       <div class="map-center">
+        <div class="axis-label y">Y</div>
         <div id="yAxis"></div>
         <div id="mapGrid"></div>
+        <div class="axis-label x">X</div>
         <div id="xAxis"></div>
       </div>
       <button class="map-right" id="rightBtn">▶</button>
       <button class="map-down" id="downBtn">▼</button>
+    </div>
+    <div class="legend">
+      <span><i class="swatch" style="background:#4f9cff"></i>water</span>
+      <span><i class="swatch" style="background:#9a9a9a"></i>rock</span>
+      <span><i class="swatch" style="background:#3b8f3b"></i>wood</span>
+      <span><i class="swatch" style="background:#d9c27a"></i>normal</span>
+      <span><i class="swatch" style="background:#222"></i>edge</span>
+      <span><i class="swatch" style="background:#ff2a2a"></i>base</span>
     </div>
     <div class="small" id="edgeHint"></div>
   </div>
@@ -40,8 +50,11 @@
   </div>
 
   <div class="row">
-    <input id="prefetchInput" type="number" min="0" max="6" value="2" />
-    <input id="maxRangeInput" type="number" min="1" max="100" value="20" />
+    <table class="params-table">
+      <tr><th>Parameter</th><th>Value</th></tr>
+      <tr><td>Chunk Prefetch Radius</td><td><input id="prefetchInput" type="number" min="0" max="6" value="2" /></td></tr>
+      <tr><td>Max Range Per Request</td><td><input id="maxRangeInput" type="number" min="1" max="100" value="20" /></td></tr>
+    </table>
     <button id="paramsBtn">Update Server Params</button>
   </div>
 

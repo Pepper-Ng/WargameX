@@ -1,3 +1,5 @@
+const zoomToTileSize = { 1: 12, 2: 20, 3: 30, 4: 40 };
+
 const state = {
   username: null,
   password: 'test123',
@@ -12,6 +14,7 @@ const state = {
   mapState: null,
   highlightKey: null,
   holdTimer: null,
+  serverParamsLoaded: { chunkPrefetchRadius: 2, maxRangePerRequest: 20 },
 };
 
 const el = {
@@ -35,7 +38,6 @@ const el = {
 };
 
 const colorsByType = { water: '#4f9cff', rock: '#9a9a9a', wood: '#3b8f3b', normal: '#d9c27a', edge: '#222' };
-
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function setOutput(data) {
@@ -43,26 +45,23 @@ function setOutput(data) {
 }
 
 function getTileSize() {
-  return 12 * state.zoom;
+  return zoomToTileSize[state.zoom];
 }
 
 function getVisibleTileCount() {
-  let count = Math.floor(600 / getTileSize());
-  if (count % 2 === 0) count -= 1;
-  return Math.max(5, count);
+  return Math.floor(600 / getTileSize());
 }
 
-function keyForChunk(chunkX, chunkY) {
-  return `${chunkX}:${chunkY}`;
+function viewBounds() {
+  const count = getVisibleTileCount();
+  const startX = state.centerX - Math.floor(count / 2);
+  const startY = state.centerY - Math.floor(count / 2);
+  return { count, startX, startY, endX: startX + count - 1, endY: startY + count - 1 };
 }
 
-function keyForTile(x, y) {
-  return `${x}:${y}`;
-}
-
-function toChunkCoord(v) {
-  return Math.floor(v / state.chunkSize);
-}
+function keyForChunk(chunkX, chunkY) { return `${chunkX}:${chunkY}`; }
+function keyForTile(x, y) { return `${x}:${y}`; }
+function toChunkCoord(v) { return Math.floor(v / state.chunkSize); }
 
 function updateUserLabel() {
   el.userLabel.textContent = state.username ? `${state.username} (id: ${state.playerId || 'unknown'})` : 'none';
@@ -81,7 +80,6 @@ async function callApi(url, method = 'GET', body) {
 async function fetchChunk(chunkX, chunkY) {
   const key = keyForChunk(chunkX, chunkY);
   if (state.chunkCache.has(key)) return state.chunkCache.get(key);
-
   const result = await callApi(`/map/chunk?chunkX=${chunkX}&chunkY=${chunkY}&chunkSize=${state.chunkSize}`);
   if (result.status === 200) {
     state.chunkCache.set(key, result.data);
@@ -91,17 +89,11 @@ async function fetchChunk(chunkX, chunkY) {
 }
 
 async function ensureChunksLoaded() {
-  const visibleCount = getVisibleTileCount();
-  const half = Math.floor(visibleCount / 2);
-  const minX = state.centerX - half;
-  const maxX = state.centerX + half;
-  const minY = state.centerY - half;
-  const maxY = state.centerY + half;
-
-  const minChunkX = toChunkCoord(minX) - state.chunkPrefetchRadius;
-  const maxChunkX = toChunkCoord(maxX) + state.chunkPrefetchRadius;
-  const minChunkY = toChunkCoord(minY) - state.chunkPrefetchRadius;
-  const maxChunkY = toChunkCoord(maxY) + state.chunkPrefetchRadius;
+  const { startX, startY, endX, endY } = viewBounds();
+  const minChunkX = toChunkCoord(startX) - state.chunkPrefetchRadius;
+  const maxChunkX = toChunkCoord(endX) + state.chunkPrefetchRadius;
+  const minChunkY = toChunkCoord(startY) - state.chunkPrefetchRadius;
+  const maxChunkY = toChunkCoord(endY) + state.chunkPrefetchRadius;
 
   const jobs = [];
   for (let cx = minChunkX; cx <= maxChunkX; cx += 1) {
@@ -116,18 +108,21 @@ function getTileFromCache(x, y) {
   return chunk.tiles.find((tile) => tile.x === x && tile.y === y) || null;
 }
 
-function drawAxes(minX, maxX, minY, maxY, tileSize) {
+function drawAxes(startX, startY, count, tileSize) {
   el.xAxis.innerHTML = '';
   el.yAxis.innerHTML = '';
 
-  for (let x = minX; x <= maxX; x += 1) {
+  for (let i = 0; i < count; i += 1) {
+    const x = startX + i;
     const d = document.createElement('div');
     d.style.width = `${tileSize}px`;
     d.textContent = x;
     el.xAxis.appendChild(d);
   }
-  el.yAxis.style.gridTemplateRows = `repeat(${maxY - minY + 1}, ${tileSize}px)`;
-  for (let y = minY; y <= maxY; y += 1) {
+
+  el.yAxis.style.gridTemplateRows = `repeat(${count}, ${tileSize}px)`;
+  for (let i = 0; i < count; i += 1) {
+    const y = startY + i;
     const d = document.createElement('div');
     d.style.height = `${tileSize}px`;
     d.textContent = y;
@@ -137,19 +132,16 @@ function drawAxes(minX, maxX, minY, maxY, tileSize) {
 
 function drawMap() {
   const tileSize = getTileSize();
-  const visibleCount = getVisibleTileCount();
-  const half = Math.floor(visibleCount / 2);
-  const minX = state.centerX - half;
-  const maxX = state.centerX + half;
-  const minY = state.centerY - half;
-  const maxY = state.centerY + half;
+  const { count, startX, startY } = viewBounds();
 
-  el.mapGrid.style.gridTemplateColumns = `repeat(${visibleCount}, ${tileSize}px)`;
+  el.mapGrid.style.gridTemplateColumns = `repeat(${count}, ${tileSize}px)`;
   el.mapGrid.innerHTML = '';
 
   let edgeCount = 0;
-  for (let y = minY; y <= maxY; y += 1) {
-    for (let x = minX; x <= maxX; x += 1) {
+  for (let row = 0; row < count; row += 1) {
+    for (let col = 0; col < count; col += 1) {
+      const x = startX + col;
+      const y = startY + row;
       const tile = getTileFromCache(x, y);
       const div = document.createElement('div');
       div.className = 'tile';
@@ -163,10 +155,7 @@ function drawMap() {
       }
 
       div.style.backgroundColor = colorsByType[tile.tileType] || '#fff';
-      if (tile.isEdge) {
-        div.classList.add('edge');
-        edgeCount += 1;
-      }
+      if (tile.isEdge) { div.classList.add('edge'); edgeCount += 1; }
 
       const baseForce = tile.forces.find((force) => force.type === 'base');
       if (baseForce) {
@@ -177,12 +166,11 @@ function drawMap() {
       }
 
       if (state.highlightKey === keyForTile(x, y)) div.style.outline = '2px solid #ff00ff';
-
       el.mapGrid.appendChild(div);
     }
   }
 
-  drawAxes(minX, maxX, minY, maxY, tileSize);
+  drawAxes(startX, startY, count, tileSize);
   el.zoomLabel.textContent = `${state.zoom}x`;
   el.edgeHint.textContent = edgeCount > 0 ? 'Reached map edge.' : 'Inside generated terrain.';
 }
@@ -203,15 +191,14 @@ async function refreshViewport() {
 }
 
 async function animateMove(dx, dy, tiles = 3) {
-  const steps = tiles;
-  for (let i = 0; i < steps; i += 1) {
+  for (let i = 0; i < tiles; i += 1) {
     const next = clampCenter(state.centerX + dx, state.centerY + dy);
     if (next.x === state.centerX && next.y === state.centerY) break;
     state.centerX = next.x;
     state.centerY = next.y;
     drawMap();
     await ensureChunksLoaded();
-    await sleep(40);
+    await sleep(45);
   }
   drawMap();
 }
@@ -220,7 +207,7 @@ function bindHoldScroll(buttonId, dx, dy) {
   const btn = document.getElementById(buttonId);
   btn.addEventListener('click', () => animateMove(dx, dy, 3));
   btn.addEventListener('mousedown', () => {
-    if (state.holdTimer) clearInterval(state.holdTimer);
+    clearInterval(state.holdTimer);
     state.holdTimer = setInterval(() => animateMove(dx, dy, 1), 120);
   });
   btn.addEventListener('mouseup', () => clearInterval(state.holdTimer));
@@ -271,13 +258,17 @@ function renderStatsTree(players) {
 
 async function loadStats() {
   const result = await callApi('/debug/stats');
-  if (result.status === 200) {
-    state.chunkPrefetchRadius = result.data.serverParameters.chunkPrefetchRadius;
-    el.prefetchInput.value = result.data.serverParameters.chunkPrefetchRadius;
-    el.maxRangeInput.value = result.data.serverParameters.maxRangePerRequest;
-    el.serverInfo.textContent = JSON.stringify(result.data, null, 2);
-    renderStatsTree(result.data.players);
-  }
+  if (result.status !== 200) return;
+
+  state.chunkPrefetchRadius = result.data.serverParameters.chunkPrefetchRadius;
+  state.serverParamsLoaded = {
+    chunkPrefetchRadius: result.data.serverParameters.chunkPrefetchRadius,
+    maxRangePerRequest: result.data.serverParameters.maxRangePerRequest,
+  };
+  el.prefetchInput.value = result.data.serverParameters.chunkPrefetchRadius;
+  el.maxRangeInput.value = result.data.serverParameters.maxRangePerRequest;
+  el.serverInfo.textContent = JSON.stringify(result.data, null, 2);
+  renderStatsTree(result.data.players);
 }
 
 async function loadLogs() {
@@ -299,10 +290,19 @@ async function reloadView() {
 }
 
 document.getElementById('paramsBtn').addEventListener('click', async () => {
-  const result = await callApi('/debug/server-params', 'PUT', {
-    chunkPrefetchRadius: el.prefetchInput.value,
-    maxRangePerRequest: el.maxRangeInput.value,
-  });
+  const updates = {};
+  const newPrefetch = Number.parseInt(el.prefetchInput.value, 10);
+  const newRange = Number.parseInt(el.maxRangeInput.value, 10);
+
+  if (newPrefetch !== state.serverParamsLoaded.chunkPrefetchRadius) updates.chunkPrefetchRadius = newPrefetch;
+  if (newRange !== state.serverParamsLoaded.maxRangePerRequest) updates.maxRangePerRequest = newRange;
+
+  if (Object.keys(updates).length === 0) {
+    setOutput({ action: 'update-server-params', message: 'No parameter changes detected.' });
+    return;
+  }
+
+  const result = await callApi('/debug/server-params', 'PUT', updates);
   setOutput({ action: 'update-server-params', ...result });
   await loadStats();
 });
