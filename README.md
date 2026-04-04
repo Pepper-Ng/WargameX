@@ -26,6 +26,8 @@ node server.js
 Server starts on:
 - `http://localhost:3000`
 
+Note: server starts immediately and warms the initial map area in the background.
+
 Useful pages:
 - Health: `GET /health`
 - Debug UI: `GET /debug`
