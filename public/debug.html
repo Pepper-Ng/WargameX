@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wargame X Debug</title>
+  <link rel="stylesheet" href="/public/debug.css" />
+</head>
+<body>
+  <h1>Wargame X Debug Page</h1>
+
+  <div class="row">
+    <button id="toggleMapBtn">Hide Map</button>
+    <button id="mapBtn">Reload View</button>
+    <button id="zoomOutBtn">Zoom -</button>
+    <button id="zoomInBtn">Zoom +</button>
+    <label>Zoom <input id="zoomInput" type="range" min="1" max="4" value="1" /></label>
+    <span id="zoomLabel">1x</span>
+  </div>
+
+  <div id="mapContainer">
+    <div class="map-controls">
+      <button class="map-up" id="upBtn">▲</button>
+      <button class="map-left" id="leftBtn">◀</button>
+      <div class="map-center">
+        <div class="axis-label y">Y</div>
+        <div id="yAxis"></div>
+        <div id="mapGrid"></div>
+        <div class="axis-label x">X</div>
+        <div id="xAxis"></div>
+      </div>
+      <button class="map-right" id="rightBtn">▶</button>
+      <button class="map-down" id="downBtn">▼</button>
+    </div>
+    <div class="legend">
+      <span><i class="swatch" style="background:#4f9cff"></i>water</span>
+      <span><i class="swatch" style="background:#9a9a9a"></i>rock</span>
+      <span><i class="swatch" style="background:#3b8f3b"></i>wood</span>
+      <span><i class="swatch" style="background:#d9c27a"></i>normal</span>
+      <span><i class="swatch" style="background:#222"></i>edge</span>
+      <span><i class="swatch" style="background:#ff2a2a"></i>base</span>
+    </div>
+    <div class="small" id="edgeHint"></div>
+  </div>
+
+  <div class="row">
+    <input id="seedInput" type="text" placeholder="new-map-seed" />
+    <input id="sizeInput" type="number" min="10" step="1" value="100" />
+    <button id="seedBtn">Regenerate Map With Seed + Size</button>
+  </div>
+
+  <div class="row">
+    <table class="params-table">
+      <tr><th>Parameter</th><th>Value</th></tr>
+      <tr><td>Chunk Prefetch Radius</td><td><input id="prefetchInput" type="number" min="0" max="6" value="2" /></td></tr>
+      <tr><td>Max Range Per Request</td><td><input id="maxRangeInput" type="number" min="1" max="100" value="20" /></td></tr>
+    </table>
+    <button id="paramsBtn">Update Server Params</button>
+  </div>
+
+  <div class="row">
+    <button id="registerBtn">Register (random)</button>
+    <button id="loginBtn">Login</button>
+    <button id="baseBtn">Create Base</button>
+    <button id="forceBtn">Create Force</button>
+    <button id="refreshStatsBtn">Refresh Stats</button>
+    <button id="refreshLogsBtn">Refresh Logs</button>
+  </div>
+
+  <div class="row">
+    <strong>Current user:</strong> <span id="userLabel">none</span>
+  </div>
+
+  <div class="row split">
+    <div>
+      <h3>Players / Bases / Forces</h3>
+      <div id="statsTree"></div>
+    </div>
+    <div>
+      <h3>Server / DB Info</h3>
+      <pre id="serverInfo">Loading...</pre>
+      <h3>Server Log (tail)</h3>
+      <pre id="logOutput">Loading...</pre>
+    </div>
+  </div>
+
+  <pre id="output">Ready.</pre>
+
+  <script src="/public/debug.js"></script>
+</body>
+</html>

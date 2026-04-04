@@ -1,0 +1,25 @@
+{
+  "name": "wargamex",
+  "version": "1.0.0",
+  "description": "Minimal backend for Wargame X",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check server.js && rg --files -g '*.js' src | xargs -n1 node --check && npm test",
+    "prestart": "npm test",
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "wargame",
+    "rts",
+    "backend"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.19.2",
+    "sqlite3": "6.0.1"
+  }
+}

@@ -1,0 +1,30 @@
+body { font-family: Arial, sans-serif; margin: 20px; max-width: 1280px; }
+button { margin: 4px; padding: 8px 12px; }
+input { padding: 6px 8px; }
+pre { background: #111; color: #0f0; padding: 12px; border-radius: 6px; white-space: pre-wrap; height: 220px; overflow-y: auto; }
+.row { margin-bottom: 10px; }
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+#mapContainer { display: block; position: static; margin: 10px 0; border: 1px solid #ddd; padding: 8px; width: fit-content; }
+#mapGrid { display: grid; gap: 0; width: 600px; height: 600px; overflow: hidden; background: #fff; grid-column: 2; grid-row: 1; }
+#xAxis { display: grid; grid-auto-flow: column; font-size: 10px; color: #666; background: transparent; grid-column: 2; grid-row: 2; }
+#yAxis { display: grid; font-size: 10px; color: #666; width: 34px; text-align: right; background: transparent; grid-column: 1; grid-row: 1; align-content: start; padding-top: 0px; }
+.axis-label { font-size: 12px; font-weight: bold; color: #666; background: transparent; }
+.axis-label.y { grid-column: 1; grid-row: 1; align-self: start; }
+.axis-label.x { grid-column: 1; grid-row: 2; align-self: center; }
+.tile { position: relative; border: 0; }
+.tile.edge { background: repeating-linear-gradient(45deg,#ccc,#ccc 2px,#eee 2px,#eee 4px); }
+.tile.base::after { content: ''; position: absolute; width: 50%; height: 50%; border-radius: 50%; background: #ff2a2a; top: 25%; left: 25%; box-shadow: 0 0 2px #000; }
+.map-controls { position: static; display: grid; grid-template-columns: 44px auto 44px; grid-template-rows: 44px auto 44px; width: fit-content; align-items: center; }
+.map-center { position: static; grid-column: 2; grid-row: 2; display: grid; grid-template-columns: 34px auto; grid-template-rows: auto 18px; column-gap: 6px; row-gap: 2px; background: transparent; }
+.map-up { grid-column: 2; grid-row: 1; margin-right: 0px; margin-left: 40px; }
+.map-down { grid-column: 2; grid-row: 3; margin-right: 0px; margin-left: 40px; }
+.map-left { grid-column: 1; grid-row: 2; }
+.map-right { grid-column: 3; grid-row: 2; }
+.legend { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; font-size: 12px; }
+.swatch { width: 12px; height: 12px; display: inline-block; border: 1px solid #777; margin-right: 4px; }
+.small { font-size: 12px; color: #555; margin-top: 4px; }
+#statsTree details { border: 1px solid #ddd; margin-bottom: 6px; padding: 4px; }
+#statsTree .clickable { cursor: pointer; color: #005bbb; text-decoration: underline; }
+.inline-actions button { padding: 2px 6px; font-size: 11px; }
+.params-table { border-collapse: collapse; margin-bottom: 8px; }
+.params-table th, .params-table td { border: 1px solid #ccc; padding: 4px 8px; }
