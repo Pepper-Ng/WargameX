@@ -4,18 +4,18 @@ input { padding: 6px 8px; }
 pre { background: #111; color: #0f0; padding: 12px; border-radius: 6px; white-space: pre-wrap; height: 220px; overflow-y: auto; }
 .row { margin-bottom: 10px; }
 .split { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-#mapContainer { margin: 10px 0; border: 1px solid #ddd; padding: 8px; width: fit-content; }
+#mapContainer { display: block; position: static; margin: 10px 0; border: 1px solid #ddd; padding: 8px; width: fit-content; }
 #mapGrid { display: grid; gap: 0; width: 600px; height: 600px; overflow: hidden; background: #111; }
-#xAxis { display: grid; grid-auto-flow: column; font-size: 10px; color: #333; }
-#yAxis { display: grid; font-size: 10px; color: #333; width: 34px; text-align: right; }
-.axis-label { font-size: 12px; font-weight: bold; color: #333; }
+#xAxis { display: grid; grid-auto-flow: column; font-size: 10px; color: #bbb; background: transparent; }
+#yAxis { display: grid; font-size: 10px; color: #bbb; width: 34px; text-align: right; background: transparent; }
+.axis-label { font-size: 12px; font-weight: bold; color: #bbb; background: transparent; }
 .axis-label.y { grid-column: 1; grid-row: 1; }
 .axis-label.x { grid-column: 1; grid-row: 2; align-self: center; }
 .tile { position: relative; border: 0; }
 .tile.edge { background: repeating-linear-gradient(45deg,#333,#333 2px,#222 2px,#222 4px); }
 .tile.base::after { content: ''; position: absolute; width: 50%; height: 50%; border-radius: 50%; background: #ff2a2a; top: 25%; left: 25%; box-shadow: 0 0 2px #000; }
-.map-controls { display: grid; grid-template-columns: 44px auto 44px; grid-template-rows: 44px auto 44px; width: fit-content; align-items: center; }
-.map-center { grid-column: 2; grid-row: 2; display: grid; grid-template-columns: 34px auto; grid-template-rows: auto 18px; column-gap: 6px; row-gap: 2px; }
+.map-controls { position: static; display: grid; grid-template-columns: 44px auto 44px; grid-template-rows: 44px auto 44px; width: fit-content; align-items: center; }
+.map-center { position: static; grid-column: 2; grid-row: 2; display: grid; grid-template-columns: 34px auto; grid-template-rows: auto 18px; column-gap: 6px; row-gap: 2px; background: #111; }
 .map-up { grid-column: 2; grid-row: 1; }
 .map-down { grid-column: 2; grid-row: 3; }
 .map-left { grid-column: 1; grid-row: 2; }
