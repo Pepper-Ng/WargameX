@@ -149,7 +149,7 @@ function drawMap() {
       div.style.height = `${tileSize}px`;
 
       if (!tile) {
-        div.style.backgroundColor = '#000';
+        div.style.backgroundColor = '#fff';
         el.mapGrid.appendChild(div);
         continue;
       }
