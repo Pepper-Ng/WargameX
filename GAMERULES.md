@@ -10,12 +10,12 @@
 
 -   Real-time text-based strategy game.
 -   Game loop based on simple 1-second tick.
--   Combat is calculated per tick, and takes place **simultaneous between players**.
--   Combat is based on combat rounds with a configurable fixed duration.
+-   Combat is calculated per combat round during a subsequent game tick, takes place **simultaneous between players**.
+-   Combat rounds have a configurable fixed duration.
 
 ----------
 
-## 1. Core Screens
+## 1. Core Screens - GUI
 
 ### 1.0 Home
 
