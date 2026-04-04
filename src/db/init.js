@@ -1,16 +1,19 @@
 const { run, all } = require('./database');
 const config = require('../config');
 const { getTileType, hash2d } = require('../engine/biomeGenerator');
+const { getSeed, setSeed } = require('../utils/mapSettings');
+const logger = require('../utils/logger');
 
 function randomInt(min, max, ratio) {
   return Math.floor(ratio * (max - min + 1)) + min;
 }
 
 function buildTileStats(x, y) {
+  const seed = getSeed();
   const tileType = getTileType(x, y);
   const profile = config.map.resourcesByType[tileType] || config.map.resourcesByType.normal;
-  const baseRatio = hash2d(x, y, `${config.map.seed}:resource`);
-  const regenRatio = hash2d(x, y, `${config.map.seed}:regen`);
+  const baseRatio = hash2d(x, y, `${seed}:resource`);
+  const regenRatio = hash2d(x, y, `${seed}:regen`);
 
   return {
     tileType,
@@ -24,6 +27,7 @@ async function ensureTileTypeColumn() {
   const hasTileType = columns.some((column) => column.name === 'tile_type');
 
   if (!hasTileType) {
+    logger.log('Startup', 'Migrating tiles table to include tile_type...');
     await run("ALTER TABLE tiles ADD COLUMN tile_type TEXT NOT NULL DEFAULT 'normal'");
 
     const tiles = await all('SELECT id, x, y FROM tiles');
@@ -35,6 +39,7 @@ async function ensureTileTypeColumn() {
         await run('UPDATE tiles SET tile_type = ? WHERE id = ?', [stats.tileType, tile.id]);
       }
       await run('COMMIT');
+      logger.log('Startup', 'Tile migration completed.');
     } catch (error) {
       await run('ROLLBACK');
       throw error;
@@ -47,7 +52,7 @@ async function warmInitialMapInBackground() {
   const min = -half;
   const max = half - 1;
 
-  console.log('[map] warming initial map area in background...');
+  logger.log('Startup', `Warming initial map area in background using seed "${getSeed()}"...`);
 
   await run('BEGIN TRANSACTION');
   try {
@@ -77,11 +82,35 @@ async function warmInitialMapInBackground() {
     );
 
     await run('COMMIT');
-    console.log('[map] initial map warmup complete.');
+    logger.log('Startup', 'Initial map warmup finished.');
   } catch (error) {
     await run('ROLLBACK');
-    console.error('[map] warmup failed:', error.message);
+    logger.error('Startup', `Map warmup failed: ${error.message}`);
   }
+}
+
+async function regenerateMap(seed) {
+  logger.log('Startup', `Regenerating map with new seed "${seed}"...`);
+  setSeed(seed);
+
+  await run('BEGIN TRANSACTION');
+  try {
+    await run('DELETE FROM tiles');
+    await run('DELETE FROM map_state');
+    await run('COMMIT');
+  } catch (error) {
+    await run('ROLLBACK');
+    throw error;
+  }
+
+  await run(
+    `INSERT INTO map_state (id, min_x, max_x, min_y, max_y)
+     VALUES (1, 0, 0, 0, 0)
+     ON CONFLICT(id) DO NOTHING`
+  );
+
+  await warmInitialMapInBackground();
+  logger.log('Startup', `Map regeneration finished for seed "${seed}".`);
 }
 
 async function initializeDatabase() {
@@ -155,4 +184,5 @@ async function initializeDatabase() {
 module.exports = {
   initializeDatabase,
   warmInitialMapInBackground,
+  regenerateMap,
 };

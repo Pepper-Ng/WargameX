@@ -1,6 +1,7 @@
 const { createPlayer, findPlayerByUsername } = require('../models/playerModel');
 const { hashPassword, verifyPassword } = require('../utils/password');
 const { AppError } = require('../utils/errors');
+const logger = require('../utils/logger');
 
 async function register(username, password) {
   const existing = await findPlayerByUsername(username);
@@ -10,7 +11,7 @@ async function register(username, password) {
 
   const passwordHash = hashPassword(password);
   const player = await createPlayer(username, passwordHash);
-  console.log(`[player] registered username=${player.username} id=${player.id}`);
+  logger.log('Player', `Registered username=${player.username} id=${player.id}`);
   return player;
 }
 

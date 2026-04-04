@@ -1,6 +1,21 @@
 const express = require('express');
+const { regenerateMap } = require('../db/init');
 
 const router = express.Router();
+
+router.post('/debug/regenerate-map', async (req, res, next) => {
+  try {
+    const seed = (req.body.seed || '').trim();
+    if (!seed) {
+      return res.status(400).json({ error: 'seed is required' });
+    }
+
+    await regenerateMap(seed);
+    return res.json({ message: 'Map regenerated', seed });
+  } catch (error) {
+    return next(error);
+  }
+});
 
 router.get('/debug', (req, res) => {
   res.type('html').send(`<!doctype html>
@@ -12,9 +27,11 @@ router.get('/debug', (req, res) => {
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; max-width: 1100px; }
     button { margin: 4px 8px 4px 0; padding: 8px 12px; }
-    pre { background: #111; color: #0f0; padding: 12px; border-radius: 6px; white-space: pre-wrap; min-height: 200px; }
+    input { padding: 6px 8px; }
+    pre { background: #111; color: #0f0; padding: 12px; border-radius: 6px; white-space: pre-wrap; height: 220px; overflow-y: auto; }
     .row { margin-bottom: 10px; }
-    #mapGrid { display: grid; grid-template-columns: repeat(41, 12px); gap: 0; margin-top: 10px; }
+    #mapContainer { margin: 10px 0; }
+    #mapGrid { display: grid; grid-template-columns: repeat(41, 12px); gap: 0; }
     .tile { width: 12px; height: 12px; border-radius: 0; border: 0; }
     .legend { display: flex; gap: 12px; margin-top: 8px; font-size: 14px; }
     .legend span { display: inline-flex; align-items: center; gap: 4px; }
@@ -26,11 +43,30 @@ router.get('/debug', (req, res) => {
   <p>Simple browser tools for interacting with backend endpoints.</p>
 
   <div class="row">
+    <button id="toggleMapBtn">Hide Map</button>
+    <button id="mapBtn">Load Map (-20..20)</button>
+  </div>
+
+  <div id="mapContainer">
+    <div id="mapGrid"></div>
+    <div class="legend">
+      <span><i class="swatch" style="background:#4f9cff"></i>water</span>
+      <span><i class="swatch" style="background:#9a9a9a"></i>rock</span>
+      <span><i class="swatch" style="background:#3b8f3b"></i>wood</span>
+      <span><i class="swatch" style="background:#d9c27a"></i>normal</span>
+    </div>
+  </div>
+
+  <div class="row">
+    <input id="seedInput" type="text" placeholder="new-map-seed" />
+    <button id="seedBtn">Regenerate Map With Seed</button>
+  </div>
+
+  <div class="row">
     <button id="registerBtn">Register (random)</button>
     <button id="loginBtn">Login</button>
     <button id="baseBtn">Create Base</button>
     <button id="forceBtn">Create Force</button>
-    <button id="mapBtn">Load Map</button>
   </div>
 
   <div class="row">
@@ -38,24 +74,21 @@ router.get('/debug', (req, res) => {
   </div>
 
   <pre id="output">Ready.</pre>
-  <div id="mapGrid"></div>
-  <div class="legend">
-    <span><i class="swatch" style="background:#4f9cff"></i>water</span>
-    <span><i class="swatch" style="background:#9a9a9a"></i>rock</span>
-    <span><i class="swatch" style="background:#3b8f3b"></i>wood</span>
-    <span><i class="swatch" style="background:#d9c27a"></i>normal</span>
-  </div>
 
   <script>
     const state = {
       username: null,
       password: 'test123',
       playerId: null,
+      mapVisible: true,
     };
 
     const output = document.getElementById('output');
     const userLabel = document.getElementById('userLabel');
     const mapGrid = document.getElementById('mapGrid');
+    const mapContainer = document.getElementById('mapContainer');
+    const toggleMapBtn = document.getElementById('toggleMapBtn');
+    const seedInput = document.getElementById('seedInput');
 
     const colorsByType = {
       water: '#4f9cff',
@@ -66,6 +99,7 @@ router.get('/debug', (req, res) => {
 
     function setOutput(data) {
       output.textContent = JSON.stringify(data, null, 2);
+      output.scrollTop = 0;
     }
 
     function updateUserLabel() {
@@ -83,6 +117,12 @@ router.get('/debug', (req, res) => {
         div.title = 'x=' + tile.x + ', y=' + tile.y + ', type=' + tile.tileType;
         mapGrid.appendChild(div);
       }
+    }
+
+    function toggleMap() {
+      state.mapVisible = !state.mapVisible;
+      mapContainer.style.display = state.mapVisible ? 'block' : 'none';
+      toggleMapBtn.textContent = state.mapVisible ? 'Hide Map' : 'Show Map';
     }
 
     async function callApi(url, method = 'GET', body) {
@@ -171,6 +211,30 @@ router.get('/debug', (req, res) => {
         setOutput({ action: 'map', error: error.message });
       }
     });
+
+    document.getElementById('seedBtn').addEventListener('click', async () => {
+      try {
+        const seed = seedInput.value.trim();
+        if (!seed) {
+          setOutput({ error: 'Please enter a seed first.' });
+          return;
+        }
+
+        const result = await callApi('/debug/regenerate-map', 'POST', { seed });
+        setOutput({ action: 'regenerate-map', ...result });
+
+        if (result.status === 200) {
+          const mapResult = await callApi('/map?x=0&y=0&range=20');
+          if (mapResult.status === 200 && mapResult.data.tiles) {
+            drawMap(mapResult.data.tiles);
+          }
+        }
+      } catch (error) {
+        setOutput({ action: 'regenerate-map', error: error.message });
+      }
+    });
+
+    toggleMapBtn.addEventListener('click', toggleMap);
   </script>
 </body>
 </html>`);

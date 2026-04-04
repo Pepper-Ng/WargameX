@@ -110,3 +110,13 @@ npm test
 ```
 
 Tests currently cover deterministic biome generation and map query parsing behavior.
+
+
+## Debug Seed Regeneration
+
+On `/debug`, use **Regenerate Map With Seed** to reset generated tiles with a new deterministic seed.
+
+## Logs
+
+Startup and runtime logs are timestamped and written to:
+- `logs/server.log`

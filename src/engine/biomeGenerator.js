@@ -1,4 +1,5 @@
 const config = require('../config');
+const { getSeed } = require('../utils/mapSettings');
 
 function hash2d(x, y, seedText) {
   let hash = 2166136261;
@@ -43,7 +44,7 @@ function layeredNoise(x, y, seed) {
 }
 
 function getTileType(x, y) {
-  const seed = config.map.seed;
+  const seed = getSeed();
   const terrainNoise = layeredNoise(x, y, seed);
   const moisture = smoothNoise(x, y, 18, seed, 'moisture');
   const localVariation = smoothNoise(x, y, 4, seed, 'local-variation');
