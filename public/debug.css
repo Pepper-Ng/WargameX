@@ -7,7 +7,7 @@ pre { background: #111; color: #0f0; padding: 12px; border-radius: 6px; white-sp
 #mapContainer { display: block; position: static; margin: 10px 0; border: 1px solid #ddd; padding: 8px; width: fit-content; }
 #mapGrid { display: grid; gap: 0; width: 600px; height: 600px; overflow: hidden; background: #fff; grid-column: 2; grid-row: 1; }
 #xAxis { display: grid; grid-auto-flow: column; font-size: 10px; color: #666; background: transparent; grid-column: 2; grid-row: 2; }
-#yAxis { display: grid; font-size: 10px; color: #666; width: 34px; text-align: right; background: transparent; grid-column: 1; grid-row: 1; align-content: start; padding-top: 14px; }
+#yAxis { display: grid; font-size: 10px; color: #666; width: 34px; text-align: right; background: transparent; grid-column: 1; grid-row: 1; align-content: start; padding-top: 0px; }
 .axis-label { font-size: 12px; font-weight: bold; color: #666; background: transparent; }
 .axis-label.y { grid-column: 1; grid-row: 1; align-self: start; }
 .axis-label.x { grid-column: 1; grid-row: 2; align-self: center; }
@@ -16,8 +16,8 @@ pre { background: #111; color: #0f0; padding: 12px; border-radius: 6px; white-sp
 .tile.base::after { content: ''; position: absolute; width: 50%; height: 50%; border-radius: 50%; background: #ff2a2a; top: 25%; left: 25%; box-shadow: 0 0 2px #000; }
 .map-controls { position: static; display: grid; grid-template-columns: 44px auto 44px; grid-template-rows: 44px auto 44px; width: fit-content; align-items: center; }
 .map-center { position: static; grid-column: 2; grid-row: 2; display: grid; grid-template-columns: 34px auto; grid-template-rows: auto 18px; column-gap: 6px; row-gap: 2px; background: transparent; }
-.map-up { grid-column: 2; grid-row: 1; }
-.map-down { grid-column: 2; grid-row: 3; }
+.map-up { grid-column: 2; grid-row: 1; margin-right: 0px; margin-left: 40px; }
+.map-down { grid-column: 2; grid-row: 3; margin-right: 0px; margin-left: 40px; }
 .map-left { grid-column: 1; grid-row: 2; }
 .map-right { grid-column: 3; grid-row: 2; }
 .legend { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; font-size: 12px; }
