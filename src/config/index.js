@@ -7,6 +7,7 @@ module.exports = {
     seed: process.env.MAP_SEED || 'wargamex-seed',
     initialSize: 100,
     maxRangePerRequest: 20,
+    chunkPrefetchRadius: 2,
     tileTypeWeights: {
       water: 0.16,
       rock: 0.12,

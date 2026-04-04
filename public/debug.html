@@ -8,15 +8,13 @@
 </head>
 <body>
   <h1>Wargame X Debug Page</h1>
-  <p>Map scrolls dynamically without refresh. Base markers appear at zoom >= 3.</p>
+  <p>Smooth chunk-based map viewport with preloading and player/base/force stats.</p>
 
   <div class="row">
     <button id="toggleMapBtn">Hide Map</button>
-    <label>Zoom
-      <input id="zoomInput" type="range" min="1" max="4" value="1" />
-    </label>
-    <span id="zoomLabel">1x</span>
     <button id="mapBtn">Reload View</button>
+    <label>Zoom <input id="zoomInput" type="range" min="1" max="4" value="1" /></label>
+    <span id="zoomLabel">1x</span>
   </div>
 
   <div id="mapContainer">
@@ -26,14 +24,6 @@
       <div class="map-center"><div id="mapGrid"></div></div>
       <button class="map-right" id="rightBtn">▶</button>
       <button class="map-down" id="downBtn">▼</button>
-    </div>
-    <div class="legend">
-      <span><i class="swatch" style="background:#4f9cff"></i>water</span>
-      <span><i class="swatch" style="background:#9a9a9a"></i>rock</span>
-      <span><i class="swatch" style="background:#3b8f3b"></i>wood</span>
-      <span><i class="swatch" style="background:#d9c27a"></i>normal</span>
-      <span><i class="swatch" style="background:#222"></i>map edge</span>
-      <span><i class="swatch" style="background:#ff2a2a"></i>base marker (zoom >= 3)</span>
     </div>
     <div class="small" id="edgeHint"></div>
   </div>
@@ -49,10 +39,22 @@
     <button id="loginBtn">Login</button>
     <button id="baseBtn">Create Base</button>
     <button id="forceBtn">Create Force</button>
+    <button id="refreshStatsBtn">Refresh Stats</button>
   </div>
 
   <div class="row">
     <strong>Current user:</strong> <span id="userLabel">none</span>
+  </div>
+
+  <div class="row split">
+    <div>
+      <h3>Players / Bases / Forces</h3>
+      <div id="statsTree"></div>
+    </div>
+    <div>
+      <h3>Server / DB Info</h3>
+      <pre id="serverInfo">Loading...</pre>
+    </div>
   </div>
 
   <pre id="output">Ready.</pre>

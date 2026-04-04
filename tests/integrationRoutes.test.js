@@ -114,3 +114,15 @@ test('integration: /map/chunk supports explicit chunk coordinates', async (t) =>
   assert.equal(result.data.chunk.chunkSize, 8);
   assert.equal(result.data.tiles.length, 64);
 });
+
+
+test('integration: /debug/stats returns server params and db version', async (t) => {
+  if (!requireServerReady(t)) return;
+  const address = server.address();
+  const baseUrl = `http://127.0.0.1:${address.port}`;
+
+  const result = await requestJson(baseUrl, '/debug/stats');
+  assert.equal(result.status, 200);
+  assert.ok(result.data.serverParameters);
+  assert.ok(result.data.databaseVersion >= 1);
+});

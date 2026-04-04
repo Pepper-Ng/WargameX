@@ -134,3 +134,17 @@ The `/debug` page includes:
 
 
 Chunk endpoint is intended for efficient windowed prefetch and smoother map scrolling in the debug UI.
+
+
+## Database Migrations
+
+Database schema version is tracked in `schema_migrations`.
+Migrations run automatically at server startup from `src/db/migrations/`.
+
+## Debug Stats
+
+`GET /debug/stats` returns:
+- server parameters
+- current map settings
+- database schema version
+- players tree with bases and forces

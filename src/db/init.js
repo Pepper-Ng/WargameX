@@ -1,5 +1,6 @@
-const { run, all } = require('./database');
+const { run, all, get } = require('./database');
 const config = require('../config');
+const migrations = require('./migrations');
 const { getTileType, hash2d } = require('../engine/biomeGenerator');
 const { getSeed, setSeed, getMapSize, setMapSize } = require('../utils/mapSettings');
 const logger = require('../utils/logger');
@@ -20,6 +21,46 @@ function buildTileStats(x, y) {
     resourceAmount: randomInt(profile.min, profile.max, baseRatio),
     regenerationRate: randomInt(profile.regenMin, profile.regenMax, regenRatio),
   };
+}
+
+async function ensureMigrationsTable() {
+  await run(`
+    CREATE TABLE IF NOT EXISTS schema_migrations (
+      version INTEGER PRIMARY KEY,
+      name TEXT NOT NULL,
+      applied_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+}
+
+async function runMigrations() {
+  await ensureMigrationsTable();
+  const rows = await all('SELECT version FROM schema_migrations ORDER BY version');
+  const appliedVersions = new Set(rows.map((row) => row.version));
+
+  for (const migration of migrations) {
+    if (appliedVersions.has(migration.version)) continue;
+
+    logger.log('Startup', `Running DB migration v${migration.version} (${migration.name})...`);
+    await run('BEGIN TRANSACTION');
+    try {
+      await migration.up({ run, get, all });
+      await run('INSERT INTO schema_migrations (version, name) VALUES (?, ?)', [
+        migration.version,
+        migration.name,
+      ]);
+      await run('COMMIT');
+      logger.log('Startup', `Migration v${migration.version} completed.`);
+    } catch (error) {
+      await run('ROLLBACK');
+      throw error;
+    }
+  }
+}
+
+async function getDatabaseVersion() {
+  const row = await get('SELECT MAX(version) AS version FROM schema_migrations');
+  return row && row.version ? row.version : 0;
 }
 
 async function ensureTileTypeColumn() {
@@ -120,61 +161,7 @@ async function initializeDatabase() {
   await run('PRAGMA journal_mode = WAL');
   await run('PRAGMA synchronous = NORMAL');
 
-  await run(`
-    CREATE TABLE IF NOT EXISTS players (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT NOT NULL UNIQUE,
-      password_hash TEXT NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-
-  await run(`
-    CREATE TABLE IF NOT EXISTS tiles (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      x INTEGER NOT NULL,
-      y INTEGER NOT NULL,
-      resource_amount INTEGER NOT NULL,
-      resource_regeneration_rate INTEGER NOT NULL,
-      tile_type TEXT NOT NULL DEFAULT 'normal',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE (x, y)
-    )
-  `);
-
-  await run(`
-    CREATE TABLE IF NOT EXISTS forces (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      owner_id INTEGER NOT NULL,
-      x INTEGER NOT NULL,
-      y INTEGER NOT NULL,
-      type TEXT NOT NULL CHECK(type IN ('normal', 'base')),
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (owner_id) REFERENCES players(id)
-    )
-  `);
-
-  await run(`
-    CREATE TABLE IF NOT EXISTS units (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      force_id INTEGER NOT NULL,
-      unit_type TEXT NOT NULL,
-      amount INTEGER NOT NULL DEFAULT 0,
-      FOREIGN KEY (force_id) REFERENCES forces(id)
-    )
-  `);
-
-  await run(`
-    CREATE TABLE IF NOT EXISTS map_state (
-      id INTEGER PRIMARY KEY CHECK (id = 1),
-      min_x INTEGER NOT NULL DEFAULT 0,
-      max_x INTEGER NOT NULL DEFAULT 0,
-      min_y INTEGER NOT NULL DEFAULT 0,
-      max_y INTEGER NOT NULL DEFAULT 0,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-
+  await runMigrations();
   await ensureTileTypeColumn();
 
   await run(
@@ -188,4 +175,5 @@ module.exports = {
   initializeDatabase,
   warmInitialMapInBackground,
   regenerateMap,
+  getDatabaseVersion,
 };

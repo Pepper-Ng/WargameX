@@ -5,10 +5,12 @@ const state = {
   mapVisible: true,
   centerX: 0,
   centerY: 0,
-  range: 20,
   zoom: 1,
-  cache: new Map(),
+  chunkSize: 16,
+  chunkPrefetchRadius: 2,
+  chunkCache: new Map(),
   mapState: null,
+  highlightKey: null,
 };
 
 const output = document.getElementById('output');
@@ -21,6 +23,8 @@ const sizeInput = document.getElementById('sizeInput');
 const zoomInput = document.getElementById('zoomInput');
 const zoomLabel = document.getElementById('zoomLabel');
 const edgeHint = document.getElementById('edgeHint');
+const statsTree = document.getElementById('statsTree');
+const serverInfo = document.getElementById('serverInfo');
 
 const colorsByType = {
   water: '#4f9cff',
@@ -30,13 +34,8 @@ const colorsByType = {
   edge: '#222',
 };
 
-function keyFor(x, y, range) {
-  return `${x}:${y}:${range}`;
-}
-
 function setOutput(data) {
   output.textContent = JSON.stringify(data, null, 2);
-  output.scrollTop = 0;
 }
 
 function updateUserLabel() {
@@ -45,53 +44,28 @@ function updateUserLabel() {
     : 'none';
 }
 
-function applyZoom() {
-  const tileSize = 12 * state.zoom;
-  mapGrid.style.gridTemplateColumns = `repeat(${state.range * 2 + 1}, ${tileSize}px)`;
-  for (const tile of mapGrid.children) {
-    tile.style.width = `${tileSize}px`;
-    tile.style.height = `${tileSize}px`;
-  }
-  zoomLabel.textContent = `${state.zoom}x`;
+function getTileSize() {
+  return 12 * state.zoom;
 }
 
-function drawMap(tiles) {
-  mapGrid.innerHTML = '';
-  const showBaseMarkers = state.zoom >= 3;
-  let edgeCount = 0;
-
-  for (const tile of tiles) {
-    const div = document.createElement('div');
-    div.className = 'tile';
-    if (tile.isEdge) {
-      div.classList.add('edge');
-      edgeCount += 1;
-    }
-
-    div.style.backgroundColor = colorsByType[tile.tileType] || '#ffffff';
-
-    const baseForce = tile.forces.find((force) => force.type === 'base');
-    if (showBaseMarkers && baseForce) {
-      div.classList.add('base');
-      div.title = `Base at (${tile.x}, ${tile.y}) owned by ${baseForce.owner_username}`;
-    } else {
-      div.title = `x=${tile.x}, y=${tile.y}, type=${tile.tileType}`;
-    }
-
-    mapGrid.appendChild(div);
-  }
-
-  applyZoom();
-
-  edgeHint.textContent = edgeCount > 0
-    ? 'Reached map edge. Dark striped tiles indicate the end of generated terrain.'
-    : 'Inside generated terrain.';
+function getVisibleTileCount() {
+  return Math.max(5, Math.floor(600 / getTileSize()));
 }
 
-function toggleMap() {
-  state.mapVisible = !state.mapVisible;
-  mapContainer.style.display = state.mapVisible ? 'block' : 'none';
-  toggleMapBtn.textContent = state.mapVisible ? 'Hide Map' : 'Show Map';
+function keyForChunk(chunkX, chunkY) {
+  return `${chunkX}:${chunkY}`;
+}
+
+function keyForTile(x, y) {
+  return `${x}:${y}`;
+}
+
+function toChunkCoord(value) {
+  return Math.floor(value / state.chunkSize);
+}
+
+function setServerInfo(data) {
+  serverInfo.textContent = JSON.stringify(data, null, 2);
 }
 
 async function callApi(url, method = 'GET', body) {
@@ -105,175 +79,262 @@ async function callApi(url, method = 'GET', body) {
   return { status: response.status, data };
 }
 
+async function fetchChunk(chunkX, chunkY) {
+  const key = keyForChunk(chunkX, chunkY);
+  if (state.chunkCache.has(key)) return state.chunkCache.get(key);
+
+  const result = await callApi(`/map/chunk?chunkX=${chunkX}&chunkY=${chunkY}&chunkSize=${state.chunkSize}`);
+  if (result.status === 200) {
+    state.chunkCache.set(key, result.data);
+    state.mapState = result.data.mapState;
+  }
+
+  return result.data;
+}
+
+async function ensureChunksLoaded() {
+  const visibleCount = getVisibleTileCount();
+  const half = Math.floor(visibleCount / 2);
+  const minX = state.centerX - half;
+  const maxX = state.centerX + half;
+  const minY = state.centerY - half;
+  const maxY = state.centerY + half;
+
+  const minChunkX = toChunkCoord(minX) - state.chunkPrefetchRadius;
+  const maxChunkX = toChunkCoord(maxX) + state.chunkPrefetchRadius;
+  const minChunkY = toChunkCoord(minY) - state.chunkPrefetchRadius;
+  const maxChunkY = toChunkCoord(maxY) + state.chunkPrefetchRadius;
+
+  const jobs = [];
+  for (let cx = minChunkX; cx <= maxChunkX; cx += 1) {
+    for (let cy = minChunkY; cy <= maxChunkY; cy += 1) {
+      jobs.push(fetchChunk(cx, cy));
+    }
+  }
+
+  await Promise.all(jobs);
+}
+
+function getTileFromCache(x, y) {
+  const chunkX = toChunkCoord(x);
+  const chunkY = toChunkCoord(y);
+  const chunk = state.chunkCache.get(keyForChunk(chunkX, chunkY));
+  if (!chunk) return null;
+
+  return chunk.tiles.find((tile) => tile.x === x && tile.y === y) || null;
+}
+
+function drawMap() {
+  const tileSize = getTileSize();
+  const visibleCount = getVisibleTileCount();
+  const half = Math.floor(visibleCount / 2);
+
+  mapGrid.style.gridTemplateColumns = `repeat(${visibleCount}, ${tileSize}px)`;
+  mapGrid.innerHTML = '';
+
+  let edgeCount = 0;
+  const showBaseMarkers = state.zoom >= 3;
+
+  for (let y = state.centerY - half; y <= state.centerY + half; y += 1) {
+    for (let x = state.centerX - half; x <= state.centerX + half; x += 1) {
+      const tile = getTileFromCache(x, y);
+      const div = document.createElement('div');
+      div.className = 'tile';
+      div.style.width = `${tileSize}px`;
+      div.style.height = `${tileSize}px`;
+
+      if (!tile) {
+        div.style.backgroundColor = '#000';
+        mapGrid.appendChild(div);
+        continue;
+      }
+
+      div.style.backgroundColor = colorsByType[tile.tileType] || '#fff';
+
+      if (tile.isEdge) {
+        div.classList.add('edge');
+        edgeCount += 1;
+      }
+
+      const baseForce = tile.forces.find((force) => force.type === 'base');
+      if (showBaseMarkers && baseForce) {
+        div.classList.add('base');
+        div.title = `Base at (${tile.x}, ${tile.y}) owned by ${baseForce.owner_username}`;
+      } else {
+        div.title = `x=${tile.x}, y=${tile.y}, type=${tile.tileType}`;
+      }
+
+      if (state.highlightKey === keyForTile(x, y)) {
+        div.style.outline = '2px solid #ff00ff';
+      }
+
+      mapGrid.appendChild(div);
+    }
+  }
+
+  zoomLabel.textContent = `${state.zoom}x`;
+  edgeHint.textContent = edgeCount > 0
+    ? 'Reached map edge. Dark striped tiles indicate the end of generated terrain.'
+    : 'Inside generated terrain.';
+}
+
 function clampCenter(nextX, nextY) {
   if (!state.mapState) return { x: nextX, y: nextY };
 
+  const visible = getVisibleTileCount();
+  const half = Math.floor(visible / 2);
   const edgeBuffer = 3;
-  const minX = state.mapState.min_x + state.range - edgeBuffer;
-  const maxX = state.mapState.max_x - state.range + edgeBuffer;
-  const minY = state.mapState.min_y + state.range - edgeBuffer;
-  const maxY = state.mapState.max_y - state.range + edgeBuffer;
-
   return {
-    x: Math.max(minX, Math.min(maxX, nextX)),
-    y: Math.max(minY, Math.min(maxY, nextY)),
+    x: Math.max(state.mapState.min_x + half - edgeBuffer, Math.min(state.mapState.max_x - half + edgeBuffer, nextX)),
+    y: Math.max(state.mapState.min_y + half - edgeBuffer, Math.min(state.mapState.max_y - half + edgeBuffer, nextY)),
   };
 }
 
-async function fetchMap(x, y, range, useCache = true) {
-  const key = keyFor(x, y, range);
-  if (useCache && state.cache.has(key)) return state.cache.get(key);
-
-  const result = await callApi(`/map?x=${x}&y=${y}&range=${range}`);
-  if (result.status === 200) {
-    state.cache.set(key, result);
-  }
-  return result;
-}
-
-async function prefetchNeighbors() {
-  const offsets = [
-    { x: 1, y: 0 },
-    { x: -1, y: 0 },
-    { x: 0, y: 1 },
-    { x: 0, y: -1 },
-  ];
-
-  for (const offset of offsets) {
-    const next = clampCenter(state.centerX + offset.x * 3, state.centerY + offset.y * 3);
-    fetchMap(next.x, next.y, state.range, true);
-  }
-}
-
-async function loadMapView(forceRefresh = false) {
-  const result = await fetchMap(state.centerX, state.centerY, state.range, !forceRefresh);
-  if (result.status === 200 && result.data.tiles) {
-    state.mapState = result.data.mapState;
-    drawMap(result.data.tiles);
-  }
-  setOutput({ action: 'map', center: { x: state.centerX, y: state.centerY }, ...result });
-  prefetchNeighbors();
+async function refreshViewport() {
+  await ensureChunksLoaded();
+  drawMap();
 }
 
 async function moveBy(dx, dy) {
   const next = clampCenter(state.centerX + dx, state.centerY + dy);
-  if (next.x === state.centerX && next.y === state.centerY) {
-    setOutput({ action: 'map-scroll', message: 'Reached generated map boundary.' });
-    return;
-  }
-
   state.centerX = next.x;
   state.centerY = next.y;
-  await loadMapView();
+  state.highlightKey = null;
+
+  // draw immediately from cache for smooth feel, then preload missing chunks.
+  drawMap();
+  await refreshViewport();
+}
+
+function renderStatsTree(players) {
+  statsTree.innerHTML = '';
+
+  for (const player of players) {
+    const details = document.createElement('details');
+    const summary = document.createElement('summary');
+    summary.textContent = `${player.username} (id:${player.id})`;
+    details.appendChild(summary);
+
+    const basesTitle = document.createElement('div');
+    basesTitle.textContent = `Bases (${player.bases.length})`;
+    details.appendChild(basesTitle);
+
+    for (const base of player.bases) {
+      const baseItem = document.createElement('div');
+      baseItem.className = 'clickable';
+      baseItem.textContent = `Base #${base.id} @ (${base.x}, ${base.y})`;
+      baseItem.addEventListener('click', async () => {
+        state.centerX = base.x;
+        state.centerY = base.y;
+        state.highlightKey = keyForTile(base.x, base.y);
+        await refreshViewport();
+      });
+      details.appendChild(baseItem);
+    }
+
+    const forcesTitle = document.createElement('div');
+    forcesTitle.textContent = `Forces (${player.forces.length})`;
+    details.appendChild(forcesTitle);
+
+    for (const force of player.forces) {
+      const forceItem = document.createElement('div');
+      forceItem.textContent = `Force #${force.id} @ (${force.x}, ${force.y})`;
+      details.appendChild(forceItem);
+    }
+
+    statsTree.appendChild(details);
+  }
+}
+
+async function loadStats() {
+  const result = await callApi('/debug/stats');
+  if (result.status === 200) {
+    state.chunkPrefetchRadius = result.data.serverParameters.chunkPrefetchRadius;
+    renderStatsTree(result.data.players);
+    setServerInfo(result.data);
+  }
+}
+
+async function reloadView() {
+  state.zoom = 1;
+  zoomInput.value = '1';
+  state.centerX = 0;
+  state.centerY = 0;
+  state.highlightKey = null;
+  state.chunkCache.clear();
+  await refreshViewport();
+}
+
+function toggleMap() {
+  state.mapVisible = !state.mapVisible;
+  mapContainer.style.display = state.mapVisible ? 'block' : 'none';
+  toggleMapBtn.textContent = state.mapVisible ? 'Hide Map' : 'Show Map';
 }
 
 document.getElementById('registerBtn').addEventListener('click', async () => {
-  try {
-    state.username = `player_${Math.random().toString(36).slice(2, 8)}`;
-    const result = await callApi('/register', 'POST', {
-      username: state.username,
-      password: state.password,
-    });
-
-    state.playerId = result.data.player && result.data.player.id;
-    updateUserLabel();
-    setOutput({ action: 'register', ...result });
-  } catch (error) {
-    setOutput({ action: 'register', error: error.message });
-  }
+  state.username = `player_${Math.random().toString(36).slice(2, 8)}`;
+  const result = await callApi('/register', 'POST', { username: state.username, password: state.password });
+  state.playerId = result.data.player && result.data.player.id;
+  updateUserLabel();
+  setOutput({ action: 'register', ...result });
+  await loadStats();
 });
 
 document.getElementById('loginBtn').addEventListener('click', async () => {
-  try {
-    if (!state.username) {
-      setOutput({ error: 'Register first so we know which user to login.' });
-      return;
-    }
-
-    const result = await callApi('/login', 'POST', {
-      username: state.username,
-      password: state.password,
-    });
-
-    state.playerId = result.data.player && result.data.player.id;
-    updateUserLabel();
-    setOutput({ action: 'login', ...result });
-  } catch (error) {
-    setOutput({ action: 'login', error: error.message });
-  }
+  if (!state.username) return;
+  const result = await callApi('/login', 'POST', { username: state.username, password: state.password });
+  state.playerId = result.data.player && result.data.player.id;
+  updateUserLabel();
+  setOutput({ action: 'login', ...result });
 });
 
 document.getElementById('baseBtn').addEventListener('click', async () => {
-  try {
-    if (!state.playerId) {
-      setOutput({ error: 'Login/register first.' });
-      return;
-    }
-
-    const result = await callApi('/create-base', 'POST', { playerId: state.playerId });
-    setOutput({ action: 'create-base', ...result });
-    await loadMapView(true);
-  } catch (error) {
-    setOutput({ action: 'create-base', error: error.message });
-  }
+  if (!state.playerId) return;
+  const result = await callApi('/create-base', 'POST', { playerId: state.playerId });
+  setOutput({ action: 'create-base', ...result });
+  await loadStats();
+  await refreshViewport();
 });
 
 document.getElementById('forceBtn').addEventListener('click', async () => {
-  try {
-    if (!state.playerId) {
-      setOutput({ error: 'Login/register first.' });
-      return;
-    }
-
-    const result = await callApi('/create-force', 'POST', { playerId: state.playerId });
-    setOutput({ action: 'create-force', ...result });
-    await loadMapView(true);
-  } catch (error) {
-    setOutput({ action: 'create-force', error: error.message });
-  }
+  if (!state.playerId) return;
+  const result = await callApi('/create-force', 'POST', { playerId: state.playerId });
+  setOutput({ action: 'create-force', ...result });
+  await loadStats();
+  await refreshViewport();
 });
 
-document.getElementById('mapBtn').addEventListener('click', async () => {
-  await loadMapView(true);
-});
+document.getElementById('refreshStatsBtn').addEventListener('click', loadStats);
+document.getElementById('mapBtn').addEventListener('click', reloadView);
 
 document.getElementById('seedBtn').addEventListener('click', async () => {
-  try {
-    const seed = seedInput.value.trim();
-    const size = sizeInput.value;
+  const seed = seedInput.value.trim();
+  const size = sizeInput.value;
+  if (!seed) return;
 
-    if (!seed) {
-      setOutput({ error: 'Please enter a seed first.' });
-      return;
-    }
-
-    const result = await callApi('/debug/regenerate-map', 'POST', { seed, size });
-    setOutput({ action: 'regenerate-map', ...result });
-
-    if (result.status === 200) {
-      state.cache.clear();
-      state.centerX = 0;
-      state.centerY = 0;
-      await loadMapView(true);
-    }
-  } catch (error) {
-    setOutput({ action: 'regenerate-map', error: error.message });
+  const result = await callApi('/debug/regenerate-map', 'POST', { seed, size });
+  setOutput({ action: 'regenerate-map', ...result });
+  if (result.status === 200) {
+    state.chunkCache.clear();
+    state.centerX = 0;
+    state.centerY = 0;
+    await loadStats();
+    await refreshViewport();
   }
 });
 
-zoomInput.addEventListener('input', () => {
+zoomInput.addEventListener('input', async () => {
   state.zoom = Number.parseInt(zoomInput.value, 10);
-  applyZoom();
-  if (state.zoom >= 3) {
-    loadMapView(true);
-  }
+  await refreshViewport();
 });
 
-document.getElementById('leftBtn').addEventListener('click', () => moveBy(-3, 0));
-document.getElementById('rightBtn').addEventListener('click', () => moveBy(3, 0));
-document.getElementById('upBtn').addEventListener('click', () => moveBy(0, -3));
-document.getElementById('downBtn').addEventListener('click', () => moveBy(0, 3));
-
+document.getElementById('leftBtn').addEventListener('click', () => moveBy(-1, 0));
+document.getElementById('rightBtn').addEventListener('click', () => moveBy(1, 0));
+document.getElementById('upBtn').addEventListener('click', () => moveBy(0, -1));
+document.getElementById('downBtn').addEventListener('click', () => moveBy(0, 1));
 toggleMapBtn.addEventListener('click', toggleMap);
 
-loadMapView(true);
+(async () => {
+  await loadStats();
+  await refreshViewport();
+})();

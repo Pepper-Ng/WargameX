@@ -45,3 +45,11 @@ Wargame X is a minimal Node.js backend prototype for a browser RTS. Keep archite
   - `npm run check`
 - Tests currently use Node built-in test runner (`node:test`).
 - Add tests for new deterministic helpers and route parsing behavior when possible.
+
+
+## Database Migration Policy
+- Database migrations are versioned in `src/db/migrations/` and executed on startup.
+- Current DB version is tracked in `schema_migrations` table.
+- When adding/changing tables for a feature, add a new migration file with the next version number.
+- Never drop existing user data silently; upgrade paths must preserve data (x->y->z chain).
+- Use integer incremental migration versions for this project setup.
