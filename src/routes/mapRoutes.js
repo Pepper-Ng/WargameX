@@ -17,8 +17,8 @@ router.get('/map', async (req, res, next) => {
         .json({ error: `range must be between 0 and ${config.map.maxRangePerRequest}` });
     }
 
-    const tiles = await getMapArea(x, y, range);
-    return res.json({ center: { x, y }, range, tiles });
+    const mapData = await getMapArea(x, y, range);
+    return res.json({ center: { x, y }, range, ...mapData });
   } catch (error) {
     return next(error);
   }

@@ -1,7 +1,7 @@
 const { run, all } = require('./database');
 const config = require('../config');
 const { getTileType, hash2d } = require('../engine/biomeGenerator');
-const { getSeed, setSeed } = require('../utils/mapSettings');
+const { getSeed, setSeed, getMapSize, setMapSize } = require('../utils/mapSettings');
 const logger = require('../utils/logger');
 
 function randomInt(min, max, ratio) {
@@ -48,7 +48,7 @@ async function ensureTileTypeColumn() {
 }
 
 async function warmInitialMapInBackground() {
-  const half = Math.floor(config.map.initialSize / 2);
+  const half = Math.floor(getMapSize() / 2);
   const min = -half;
   const max = half - 1;
 
@@ -89,9 +89,12 @@ async function warmInitialMapInBackground() {
   }
 }
 
-async function regenerateMap(seed) {
-  logger.log('Startup', `Regenerating map with new seed "${seed}"...`);
+async function regenerateMap(seed, size) {
+  logger.log('Startup', `Regenerating map with new seed "${seed}" and size ${size || getMapSize()}...`);
   setSeed(seed);
+  if (size !== undefined) {
+    setMapSize(size);
+  }
 
   await run('BEGIN TRANSACTION');
   try {

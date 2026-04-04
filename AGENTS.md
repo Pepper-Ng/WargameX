@@ -27,8 +27,10 @@ Wargame X is a minimal Node.js backend prototype for a browser RTS. Keep archite
 - Initial warmup area is generated in the background at startup to keep startup responsive.
 
 ## Debug Page Notes
-- `/debug` renders a 41x41 tile view (`range=20`) with 12px square tiles.
-- Map is shown before JSON output and can be hidden/shown.
+- `/debug` renders a 41x41 tile view (`range=20`) with dynamic zoom (1x..4x).
+- At zoom >= 3, base markers are shown and tile hover includes base owner details.
+- Scroll buttons move the map without page refresh and use cached/prefetched tiles.
+- Edge tiles indicate generated-map boundaries; UI allows showing up to ~3 edge tiles at boundaries.
 - Console output area is fixed-height with scroll.
 
 ## Development Notes

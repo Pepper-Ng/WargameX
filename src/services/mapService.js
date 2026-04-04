@@ -1,8 +1,9 @@
 const config = require('../config');
 const { findTileByCoordinates, createTileIfMissing } = require('../models/tileModel');
 const { findForcesInRange } = require('../models/forceModel');
-const { getMapState, expandMapState } = require('../models/mapStateModel');
+const { getMapState } = require('../models/mapStateModel');
 const { getTileType, hash2d } = require('../engine/biomeGenerator');
+const { getSeed, getMapSize } = require('../utils/mapSettings');
 
 function randomInt(min, max, ratio) {
   return Math.floor(ratio * (max - min + 1)) + min;
@@ -11,44 +12,32 @@ function randomInt(min, max, ratio) {
 function buildTileStats(x, y) {
   const tileType = getTileType(x, y);
   const profile = config.map.resourcesByType[tileType] || config.map.resourcesByType.normal;
+  const seed = getSeed();
 
   return {
     tileType,
-    resourceAmount: randomInt(profile.min, profile.max, hash2d(x, y, `${config.map.seed}:resource`)),
-    regenerationRate: randomInt(
-      profile.regenMin,
-      profile.regenMax,
-      hash2d(x, y, `${config.map.seed}:regen`)
-    ),
+    resourceAmount: randomInt(profile.min, profile.max, hash2d(x, y, `${seed}:resource`)),
+    regenerationRate: randomInt(profile.regenMin, profile.regenMax, hash2d(x, y, `${seed}:regen`)),
   };
 }
 
-async function ensureGeneratedArea(minX, maxX, minY, maxY) {
-  const state = await getMapState();
-
-  // If requested area is already generated, we skip expansion work.
-  if (state && minX >= state.min_x && maxX <= state.max_x && minY >= state.min_y && maxY <= state.max_y) {
-    return;
+async function getTile(x, y, stateOverride) {
+  const state = stateOverride || (await getMapState());
+  if (state && (x < state.min_x || x > state.max_x || y < state.min_y || y > state.max_y)) {
+    return {
+      x,
+      y,
+      tile_type: 'edge',
+      resource_amount: 0,
+      resource_regeneration_rate: 0,
+      is_edge: 1,
+    };
   }
 
-  for (let x = minX; x <= maxX; x += 1) {
-    for (let y = minY; y <= maxY; y += 1) {
-      const stats = buildTileStats(x, y);
-      // eslint-disable-next-line no-await-in-loop
-      await createTileIfMissing(x, y, stats.resourceAmount, stats.regenerationRate, stats.tileType);
-    }
-  }
-
-  await expandMapState(minX, maxX, minY, maxY);
-}
-
-async function getTile(x, y) {
   const existing = await findTileByCoordinates(x, y);
   if (existing) return existing;
 
   const stats = buildTileStats(x, y);
-
-  // Atomic insert avoids race conditions under concurrent requests.
   return createTileIfMissing(x, y, stats.resourceAmount, stats.regenerationRate, stats.tileType);
 }
 
@@ -57,17 +46,7 @@ async function getMapArea(centerX, centerY, range) {
   const maxX = centerX + range;
   const minY = centerY - range;
   const maxY = centerY + range;
-
-  await ensureGeneratedArea(minX, maxX, minY, maxY);
-
-  const tiles = [];
-  for (let x = minX; x <= maxX; x += 1) {
-    for (let y = minY; y <= maxY; y += 1) {
-      // eslint-disable-next-line no-await-in-loop
-      const tile = await getTile(x, y);
-      tiles.push(tile);
-    }
-  }
+  const state = await getMapState();
 
   const forces = await findForcesInRange(minX, maxX, minY, maxY);
   const forcesByTile = new Map();
@@ -78,14 +57,31 @@ async function getMapArea(centerX, centerY, range) {
     forcesByTile.get(key).push(force);
   }
 
-  return tiles.map((tile) => ({
-    x: tile.x,
-    y: tile.y,
-    tileType: tile.tile_type,
-    resourceAmount: tile.resource_amount,
-    resourceRegenerationRate: tile.resource_regeneration_rate,
-    forces: forcesByTile.get(`${tile.x},${tile.y}`) || [],
-  }));
+  const tiles = [];
+  for (let y = minY; y <= maxY; y += 1) {
+    for (let x = minX; x <= maxX; x += 1) {
+      // eslint-disable-next-line no-await-in-loop
+      const tile = await getTile(x, y, state);
+      const key = `${x},${y}`;
+
+      tiles.push({
+        x,
+        y,
+        tileType: tile.tile_type,
+        resourceAmount: tile.resource_amount,
+        resourceRegenerationRate: tile.resource_regeneration_rate,
+        isEdge: tile.tile_type === 'edge',
+        forces: tile.tile_type === 'edge' ? [] : forcesByTile.get(key) || [],
+      });
+    }
+  }
+
+  return {
+    tiles,
+    mapState: state,
+    seed: getSeed(),
+    mapSize: getMapSize(),
+  };
 }
 
 module.exports = {

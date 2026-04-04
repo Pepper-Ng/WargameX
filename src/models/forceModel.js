@@ -19,7 +19,10 @@ async function findForcesByTile(x, y) {
 
 async function findForcesInRange(minX, maxX, minY, maxY) {
   return all(
-    'SELECT * FROM forces WHERE x BETWEEN ? AND ? AND y BETWEEN ? AND ?',
+    `SELECT f.*, p.username AS owner_username
+     FROM forces f
+     JOIN players p ON p.id = f.owner_id
+     WHERE f.x BETWEEN ? AND ? AND f.y BETWEEN ? AND ?`,
     [minX, maxX, minY, maxY]
   );
 }

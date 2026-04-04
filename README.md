@@ -120,3 +120,13 @@ On `/debug`, use **Regenerate Map With Seed** to reset generated tiles with a ne
 
 Startup and runtime logs are timestamped and written to:
 - `logs/server.log`
+
+
+## Debug Map Viewer Controls
+
+The `/debug` page includes:
+- zoom slider (1x-4x)
+- directional scroll buttons (no page refresh)
+- base markers at higher zoom levels
+- seed + map size regeneration inputs
+- edge-tile indication when you reach generated map boundaries
