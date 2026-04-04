@@ -84,7 +84,49 @@ async function getMapArea(centerX, centerY, range) {
   };
 }
 
+async function getMapChunk(chunkX, chunkY, chunkSize = 16) {
+  const minX = chunkX * chunkSize;
+  const maxX = minX + chunkSize - 1;
+  const minY = chunkY * chunkSize;
+  const maxY = minY + chunkSize - 1;
+  const state = await getMapState();
+
+  const forces = await findForcesInRange(minX, maxX, minY, maxY);
+  const forcesByTile = new Map();
+  for (const force of forces) {
+    const key = `${force.x},${force.y}`;
+    if (!forcesByTile.has(key)) forcesByTile.set(key, []);
+    forcesByTile.get(key).push(force);
+  }
+
+  const tiles = [];
+  for (let y = minY; y <= maxY; y += 1) {
+    for (let x = minX; x <= maxX; x += 1) {
+      // eslint-disable-next-line no-await-in-loop
+      const tile = await getTile(x, y, state);
+      const key = `${x},${y}`;
+      tiles.push({
+        x, y,
+        tileType: tile.tile_type,
+        resourceAmount: tile.resource_amount,
+        resourceRegenerationRate: tile.resource_regeneration_rate,
+        isEdge: tile.tile_type === 'edge',
+        forces: tile.tile_type === 'edge' ? [] : forcesByTile.get(key) || [],
+      });
+    }
+  }
+
+  return {
+    chunk: { chunkX, chunkY, chunkSize },
+    tiles,
+    mapState: state,
+    seed: getSeed(),
+    mapSize: getMapSize(),
+  };
+}
+
 module.exports = {
   getTile,
   getMapArea,
+  getMapChunk,
 };

@@ -1,3 +1,4 @@
+const path = require('path');
 const express = require('express');
 const authRoutes = require('./routes/authRoutes');
 const forceRoutes = require('./routes/forceRoutes');
@@ -9,6 +10,7 @@ const logger = require('./utils/logger');
 const app = express();
 
 app.use(express.json());
+app.use('/public', express.static(path.join(__dirname, '../public')));
 
 app.get('/health', (req, res) => {
   res.json({

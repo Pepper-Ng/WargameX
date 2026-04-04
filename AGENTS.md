@@ -12,6 +12,7 @@ Wargame X is a minimal Node.js backend prototype for a browser RTS. Keep archite
 - `src/models/*`: SQL persistence functions.
 - `src/services/*`: domain logic.
 - `src/routes/*`: HTTP handlers.
+- `public/`: debug UI static assets (`debug.html`, `debug.css`, `debug.js`).
 - `src/engine/*`: game loop and biome generation.
 - `src/utils/*`: helpers (password, parsing, logging, settings).
 

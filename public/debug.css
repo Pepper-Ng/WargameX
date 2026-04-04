@@ -1,0 +1,30 @@
+body { font-family: Arial, sans-serif; margin: 20px; max-width: 1200px; }
+button { margin: 4px; padding: 8px 12px; }
+input { padding: 6px 8px; }
+pre { background: #111; color: #0f0; padding: 12px; border-radius: 6px; white-space: pre-wrap; height: 220px; overflow-y: auto; }
+.row { margin-bottom: 10px; }
+#mapContainer { margin: 10px 0; border: 1px solid #ddd; padding: 8px; width: fit-content; }
+#mapGrid { display: grid; gap: 0; }
+.tile { position: relative; border-radius: 0; border: 0; }
+.tile.edge { background: repeating-linear-gradient(45deg,#333,#333 2px,#222 2px,#222 4px); }
+.tile.base::after {
+  content: '';
+  position: absolute;
+  width: 50%;
+  height: 50%;
+  border-radius: 50%;
+  background: #ff2a2a;
+  top: 25%;
+  left: 25%;
+  box-shadow: 0 0 2px #000;
+}
+.legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; font-size: 14px; }
+.legend span { display: inline-flex; align-items: center; gap: 4px; }
+.swatch { width: 12px; height: 12px; border: 1px solid #666; display: inline-block; }
+.map-controls { display: grid; grid-template-columns: 40px auto 40px; grid-template-rows: 40px auto 40px; width: fit-content; }
+.map-center { grid-column: 2; grid-row: 2; }
+.map-up { grid-column: 2; grid-row: 1; }
+.map-down { grid-column: 2; grid-row: 3; }
+.map-left { grid-column: 1; grid-row: 2; }
+.map-right { grid-column: 3; grid-row: 2; }
+.small { font-size: 12px; color: #555; }

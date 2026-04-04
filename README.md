@@ -88,6 +88,7 @@ curl "http://localhost:3000/map?x=0&y=0&range=5"
 - `POST /create-base`
 - `POST /create-force`
 - `GET /map?x=0&y=0&range=5`
+- `GET /map/chunk?chunkX=0&chunkY=0&chunkSize=16`
 - `GET /health`
 - `GET /debug`
 
@@ -130,3 +131,6 @@ The `/debug` page includes:
 - base markers at higher zoom levels
 - seed + map size regeneration inputs
 - edge-tile indication when you reach generated map boundaries
+
+
+Chunk endpoint is intended for efficient windowed prefetch and smoother map scrolling in the debug UI.
