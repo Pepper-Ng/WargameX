@@ -6,11 +6,11 @@ Primary entry point for developers (and AI agents) working on Wargame X internal
 - [Architecture](./architecture/system-overview.md)
 - [Backend](./backend/api.md), [Auth](./backend/auth.md)
 - [Frontend](./frontend/components.md)
-- [Mechanics Index](./mechanics/README.md)
-- [Data](./data/tiles.md)
+- [Game Mechanics](./mechanics/README.md)
+- [Game Data](./data/tiles.md)
 
-## Mechanics deep links
-- [Mechanics Fundamentals](./mechanics/fundamentals.md)
+## Mechanics
+- [Fundamentals](./mechanics/fundamentals.md)
 - [World](./mechanics/world/README.md)
 - [Economy](./mechanics/economy/README.md)
 - [Combat](./mechanics/combat/README.md)

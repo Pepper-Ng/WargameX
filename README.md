@@ -15,9 +15,9 @@ This project currently includes:
 ## Documentation
 
 A structured docs tree is available under `docs/`:
-- Public gameplay scaffold: `docs/public/gameplay-guide.md`
+- Public gameplay guide: `docs/public/gameplay-guide.md`
 - Internal technical docs index: `docs/internal/README.md`
-- Mechanics navigation hub: `docs/internal/mechanics/README.md`
+- Game mechanics: `docs/internal/mechanics/README.md`
 
 Mechanics (including fundamentals/world/economy/combat/units/buildings) and architecture notes live in the internal docs tree.
 
