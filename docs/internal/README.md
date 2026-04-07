@@ -2,13 +2,20 @@
 
 Primary entry point for developers (and AI agents) working on Wargame X internals.
 
-## Sections
+## Quick navigation
 - [Architecture](./architecture/system-overview.md)
 - [Backend](./backend/api.md), [Auth](./backend/auth.md)
 - [Frontend](./frontend/components.md)
-- [Mechanics Fundamentals](./mechanics/fundamentals.md)
-- [World Mechanics](./mechanics/world/README.md)
-- [Data](./data/tiles.md)
+- [Game Mechanics](./mechanics/README.md)
+- [Game Data](./data/tiles.md)
+
+## Mechanics
+- [Fundamentals](./mechanics/fundamentals.md)
+- [World](./mechanics/world/README.md)
+- [Economy](./mechanics/economy/README.md)
+- [Combat](./mechanics/combat/README.md)
+- [Buildings](./mechanics/buildings/README.md)
+- [Units](./mechanics/units/README.md)
 
 ## Documentation intent
 - Keep public docs concise and player-facing.
