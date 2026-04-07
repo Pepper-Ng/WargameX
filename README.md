@@ -11,6 +11,15 @@ This project currently includes:
 
 > No gameplay systems are implemented yet (no movement, no combat, no economy logic).
 
+
+## Documentation
+
+A structured docs tree is available under `docs/`:
+- Public gameplay scaffold: `docs/public/gameplay-guide.md`
+- Internal technical docs index: `docs/internal/README.md`
+
+Mechanics (including fundamentals/world/economy/combat/units/buildings) and architecture notes live in the internal docs tree.
+
 ## Requirements
 
 - Node.js **20.x LTS** (or newer LTS)
