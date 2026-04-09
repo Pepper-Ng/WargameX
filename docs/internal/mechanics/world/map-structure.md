@@ -36,10 +36,14 @@ Tile properties are divided into **static** and **dynamic** fields. Static field
 
 ## Tile types (current)
 Current generated terrain classes:
-- `normal`
-- `wood`
+- `plains`
+- `sand`
+- `forest`
+- `swamp`
 - `rock`
+- `mountain`
 - `water`
+- `oil`
 - `ice`
 > Tile types are deterministically derived from `(seed, x, y)` through biome classification and local variation. They are not generated as an independent random step.
 
