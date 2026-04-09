@@ -4,7 +4,7 @@ Primary entry point for developers (and AI agents) working on Wargame X internal
 
 ## Quick navigation
 - [Architecture](./architecture/system-overview.md)
-- [Backend](./backend/api.md), [Auth](./backend/auth.md)
+- [Backend](./backend/README.md)
 - [Frontend](./frontend/components.md)
 - [Game Mechanics](./mechanics/README.md)
 - [Game Data](./data/tiles.md)
