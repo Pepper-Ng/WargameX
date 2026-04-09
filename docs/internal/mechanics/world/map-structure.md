@@ -6,13 +6,19 @@ Defines the canonical world tile model and coordinate semantics.
 A tile is the smallest addressable world element used for generation, persistence, and map rendering.\
 A tile represents a single coordinate in the world and is the fundamental unit shared across all systems.
 
-### Conceptual tile fields
+### Tile fields
+Tile properties are divided into **static** and **dynamic** fields. Static fields are fully determined by `(seed, x, y)` and must always resolve identically. Static properties can always be recomputed. Dynamic properties change over time.
+
+**Static properties:**
 - `x`, `y`: integer world coordinates.
-- `temperature`: temperature of the tile. Depends on seed and y-coordinate.
-- `tileType`: terrain/material classification (for example normal, wood, rock, water).
 - `biome`: higher-level environmental classification (e.g. forest, desert, tundra, ocean).
+- `tileType`: terrain/material classification (for example normal, wood, rock, water).
+- `temperature`: temperature of the tile. Depends on seed and y-coordinate.
+- `resourceRates`: generation rates per resource type.
 - `passableBy`: movement eligibility flag (provisional).
-- `resourceTags`: optional descriptors used by economy/resource systems (provisional).
+
+**Dynamic properties:**
+- `resourceAmounts`: currently available resources on the tile.
 - `occupants`: entities currently on tile (bases, forces, future structures).
 - `meta`: optional generated/debug metadata.
 
@@ -25,7 +31,7 @@ A tile represents a single coordinate in the world and is the fundamental unit s
 - Same coordinate under the same seed must always resolve to the same generated terrain.
 
 ## Determinism invariant
-- The same `(seed, x, y)` must always resolve to the same tile state (unless explicitly regenerated).
+- The same `(seed, x, y)` must always resolve to the same tile `static properties` (unless explicitly regenerated).
 
 ## Tile types (current)
 Current generated terrain classes:
@@ -34,7 +40,7 @@ Current generated terrain classes:
 - `rock`
 - `water`
 - `ice`
-> Note: Tile types are derived from biome + local variation, not generated independently.
+> Tile types are deterministically derived from `(seed, x, y)` through biome classification and local variation. They are not generated as an independent random step.
 
 ## What can exist on a tile
 - Terrain classification (always present).
