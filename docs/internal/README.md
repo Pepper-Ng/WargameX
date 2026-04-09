@@ -7,7 +7,6 @@ Primary entry point for developers (and AI agents) working on Wargame X internal
 - [Backend](./backend/README.md)
 - [Frontend](./frontend/components.md)
 - [Game Mechanics](./mechanics/README.md)
-- [Game Data](./data/tiles.md)
 
 ## Mechanics
 - [Fundamentals](./mechanics/fundamentals.md)
