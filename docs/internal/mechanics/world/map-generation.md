@@ -44,12 +44,12 @@ Biomes are determined primarily by:
 
 ### Biome set
 - `ocean`
-- `coast` (optional transitional)
 - `desert`
-- `grassland`
+- `jungle`
 - `forest`
+- `temperate`
 - `tundra`
-- `ice`
+- `mountain`
 
 ### Biome characteristics
 - Warmer regions -> desert, grassland
@@ -69,15 +69,21 @@ Tile types are derived from:
 2. Local noise variation
 3. Feature generators (e.g. rivers)
 
+For specifics on tile types see [Map structure](./map-structure.md).
+
 ### Examples
 * **Ocean biome**
-  - Mostly `water`, occasional `normal` (islands) with occasional occurances of `wood`.
+  - Mostly `water`, occasional `plains` (islands) with occasional occurances of `wood`.
+* **Desert biome**
+  - Mostly `normal`, occasional `rock`, extremely rarely `water`.
+* **Jungle biome**
+  - Mostly `wood` and `swamp`, some `water` and `normal`
 * **Forest biome**
   - Mostly `wood`, some `normal`, occasional `water`.
 * **Tundra/Ice biome**
   - Mostly `ice`, some `normal`, occasional `rock`.
-* **Desert biome**
-  - Mostly `normal`, occasional `rock`, extremely rarely `water`.
+* **Mountain biome**
+  - Mostly `mountain` and `rock`, some `ice`, occasional `plains`.
 
 ## Feature generation
 ### Rivers
