@@ -90,7 +90,7 @@ Tile types are derived from:
 Small-scale noise adds terrain diversity, imperfections and micro-features.
 
 ## Resource generation
-Resource generation is biome-dependent. Each tile is initialized with deterministic resource generation rates. See [Resource generation](./mechanics/world/resource-generation.md).
+Resource generation is biome-dependent. Each tile is initialized with deterministic resource generation rates. See [Resource generation](./resource-generation.md).
 
 ## Future sections
 - Biome weight model
