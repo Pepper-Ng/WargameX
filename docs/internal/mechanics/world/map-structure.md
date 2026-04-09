@@ -32,7 +32,7 @@ Tile properties are divided into **static** and **dynamic** fields. Static field
 
 ## Determinism invariant
 - The same `(seed, x, y)` must always resolve to the same tile `static properties` (unless explicitly regenerated).
-- For **map and tile generation** see [Map generation](./mechanics/world/map-generation.md)
+- For **map and tile generation** see [Map generation](./map-generation.md)
 
 ## Tile types (current)
 Current generated terrain classes:
