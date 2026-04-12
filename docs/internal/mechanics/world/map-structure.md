@@ -235,10 +235,8 @@ Reference (single authoritative source):
 ---
 
 > **Canonical Cross-Reference (authoritative):** For the single source of truth (biome × tileType × resource and all multipliers/capacities), see the "Comprehensive Cross-Reference Table (biome × tileType × resource)" in [Resource Generation](./resource-generation.md). Load or reference that CSV/table at startup rather than duplicating values here.
-<div class="callout crossref" style="border:1px solid #cce5ff;background:#f0f8ff;padding:10px;border-radius:6px">
-<strong>Canonical Cross-Reference (authoritative):</strong>
-Use the "Comprehensive Cross-Reference Table (biome × tileType × resource)" in [Resource Generation](./resource-generation.md) as the single source of truth for base ranges, capacities, and `biomeMultiplier` values. Load or mirror that CSV at startup rather than duplicating values across docs or code.
-</div>
+> **Canonical Cross-Reference (authoritative):**
+> Use the "Comprehensive Cross-Reference Table (biome × tileType × resource)" in [Resource Generation](./resource-generation.md) as the single source of truth for base ranges, capacities, and `biomeMultiplier` values. Load or mirror that CSV at startup rather than duplicating values across docs or code.
 
 
 ## Biome × TileType Effects (implementation summary)
@@ -282,14 +280,12 @@ Additional glossary entries (expanded for FUTURE items):
 
 ---
 
-<div class="callout future" style="border:1px solid #f0c040;background:#fff9e6;padding:12px;border-radius:6px">
-<strong>FUTURE / PLANNED</strong>
-<ul>
-	<li>Dynamic per-player tile ownership effects (e.g., ownership-based regen changes).</li>
-	<li>Regional resource redistribution (diffusion/seepage across tile clusters).</li>
-	<li>Per-unit tile passability exceptions and advanced stacking rules.</li>
-</ul>
-</div>
+
+> **FUTURE / PLANNED**
+> 
+> - Dynamic per-player tile ownership effects (e.g., ownership-based regen changes).
+> - Regional resource redistribution (diffusion/seepage across tile clusters).
+> - Per-unit tile passability exceptions and advanced stacking rules.
 
 The following items are intentionally marked FUTURE/PLANNED and are boxed here for visibility and contractual clarity. Implementers must not rely on these features unless they are explicitly enabled and documented as implemented.
 

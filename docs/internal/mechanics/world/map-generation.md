@@ -4,10 +4,8 @@
 This document specifies the **planned deterministic map and biome generation model**, including the biome weight model, noise function, tile generation algorithm, and explicit mapping rules. All advanced features are marked as **Planned** or **Future** where not yet implemented.
 
 
-<div class="callout crossref" style="border:1px solid #cce5ff;background:#f0f8ff;padding:10px;border-radius:6px">
-<strong>Canonical Cross-Reference (authoritative):</strong>
-Use the "Comprehensive Cross-Reference Table (biome × tileType × resource)" in [Resource Generation](./resource-generation.md) as the single source of truth for base ranges, capacities, and `biomeMultiplier` values. Load or mirror that CSV at startup rather than duplicating values across docs or code.
-</div>
+> **Canonical Cross-Reference (authoritative):**
+> Use the "Comprehensive Cross-Reference Table (biome × tileType × resource)" in [Resource Generation](./resource-generation.md) as the single source of truth for base ranges, capacities, and `biomeMultiplier` values. Load or mirror that CSV at startup rather than duplicating values across docs or code.
 ## Core Principle
 
 The world is generated using a **deterministic, seed-based system**:
@@ -41,15 +39,15 @@ Temperature is the primary driver of biome distribution.
   $$
   ## FUTURE / PLANNED
 
-  <div class="callout future" style="border:1px solid #f0c040;background:#fff9e6;padding:12px;border-radius:6px">
-  <strong>FUTURE / PLANNED</strong>
-  $$
-  Where $T_{eq}$ is equatorial temp, $k$ is a gradient constant, $N_{temp}$ is seed-based noise.
 
-### Noise Variation
-- Seed-based noise is added to temperature to create irregular biome boundaries.
-  </div>
-- Prevents straight lines and creates natural transitions.
+> **FUTURE / PLANNED**
+> 
+> $$
+> Where $T_{eq}$ is equatorial temp, $k$ is a gradient constant, $N_{temp}$ is seed-based noise.
+> 
+> ### Noise Variation
+> - Seed-based noise is added to temperature to create irregular biome boundaries.
+> - Prevents straight lines and creates natural transitions.
 
 ---
 

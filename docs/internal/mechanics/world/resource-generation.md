@@ -11,10 +11,8 @@ This document replaces the original planned narrative with explicit, implementat
 - Core formulas, noise function, capacities, and extraction formulas are defined below for direct implementation.
 
 ---
-<div class="callout crossref" style="border:1px solid #cce5ff;background:#f0f8ff;padding:10px;border-radius:6px">
-<strong>Canonical Cross-Reference (authoritative):</strong>
-Use the "Comprehensive Cross-Reference Table (biome × tileType × resource)" in [Resource Generation](./resource-generation.md) as the single source of truth for base ranges, capacities, and `biomeMultiplier` values. Load or mirror that CSV at startup rather than duplicating values across docs or code.
-</div>
+> **Canonical Cross-Reference (authoritative):**
+> Use the "Comprehensive Cross-Reference Table (biome × tileType × resource)" in [Resource Generation](./resource-generation.md) as the single source of truth for base ranges, capacities, and `biomeMultiplier` values. Load or mirror that CSV at startup rather than duplicating values across docs or code.
 
 ## Noise and Mapping (explicit)
 
@@ -534,13 +532,10 @@ See also: [Map Structure](./map-structure.md) and [Map Generation](./map-generat
 
 ---
 
-<div class="callout future" style="border:1px solid #f0c040;background:#fff9e6;padding:12px;border-radius:6px">
-<strong>FUTURE / PLANNED</strong>
-<ul>
-  <li>Multi-resource extraction buildings (simultaneous extraction with configurable ratios).</li>
-  <li>Regional diffusion and resource migration between adjacent tiles (seepage model).</li>
-  <li>Temporary global/regional resource modifiers (events) that alter <code>rate_final</code> for a duration.</li>
-  <li>Time-varying biome shifts that change <code>biomeMultiplier</code> over long timescales.</li>
-</ul>
-</div>
+> **FUTURE / PLANNED**
+>
+> - Multi-resource extraction buildings (simultaneous extraction with configurable ratios).
+> - Regional diffusion and resource migration between adjacent tiles (seepage model).
+> - Temporary global/regional resource modifiers (events) that alter `rate_final` for a duration.
+> - Time-varying biome shifts that change `biomeMultiplier` over long timescales.
 
