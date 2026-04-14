@@ -272,13 +272,13 @@ $$
 	ext{rate}_{\text{base}} = B_{\min} + u_r \cdot (B_{\max} - B_{\min})
 $$
 $$
-	ext{rate}_{\text{final}} = \operatorname{clamp}(\text{rate}_{\text{base}} \cdot \text{biomeMultiplier} \cdot S, B_{\min}, B_{\max} \cdot (1 + \text{maxBiomeBonus}))
+	ext{rate}_{\text{final}} = \mathrm{clamp}(\text{rate}_{\text{base}} \cdot \text{biomeMultiplier} \cdot S, B_{\min}, B_{\max} \cdot (1 + \text{maxBiomeBonus}))
 $$
 $$
 u_c = \frac{\text{Noise}(\text{seed}, x \cdot \text{freq}_{\text{cap}}, y \cdot \text{freq}_{\text{cap}}, \text{salt}_{\text{capacity}}) + 1}{2}
 $$
 $$
-	ext{capacity} = \operatorname{round}(C_{\text{base}} \cdot (1 + \text{capNoiseScale} \cdot u_c) \cdot \text{biomeCapMultiplier})
+	ext{capacity} = \mathrm{round}(C_{\text{base}} \cdot (1 + \text{capNoiseScale} \cdot u_c) \cdot \text{biomeCapMultiplier})
 $$
 
 This process programmatically generates the full cross-reference for any tile given its biome, tile type, and resource, and makes the static table unnecessary in the documentation.
