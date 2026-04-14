@@ -1,11 +1,11 @@
-
-# Resource Generation — Deterministic & Implementation-ready
-
-This document provides explicit, implementation-ready formulas, tables, and worked examples for resource generation. Sections that are not fully implemented are under development and may change as the system evolves. Only genuinely speculative or idea features are marked as **FUTURE**.
-
----
-
-## Summary (quick)
+$$
+\mathrm{clamp}(\text{rate}_{\text{base}} \cdot \text{biomeMultiplier} \cdot S, B_{\min}, B_{\max} \cdot (1 + \text{maxBiomeBonus}))
+$$
+$$
+u_c = \frac{\text{Noise}(\text{seed}, x \cdot \text{freq}_{\text{cap}}, y \cdot \text{freq}_{\text{cap}}, \text{salt}_{\text{capacity}}) + 1}{2}
+$$
+$$
+\mathrm{round}(C_{\text{base}} \cdot (1 + \text{capNoiseScale} \cdot u_c) \cdot \text{biomeCapMultiplier})
 - **resourceRates**: Deterministic per-tick generation rates computed from `(seed,x,y)` and noise. Units: units/tick.
 - **resourceAmounts**: Mutable stored amount on a tile (0..capacity), changed by extraction and regeneration. Units: units.
 - Core formulas, noise function, capacities, and extraction formulas are defined below for direct implementation.
@@ -88,7 +88,7 @@ Capacity model options (choose one; recommended: hybrid):
   $$
 3. Noise-derived variation:
   $$
-  	ext{capacity} = \operatorname{round}\left(C_{\text{base}} \cdot (1 + \text{capNoiseScale} \cdot u_c)\right)
+  	ext{capacity} = \mathrm{round}\left(C_{\text{base}} \cdot (1 + \text{capNoiseScale} \cdot u_c)\right)
   $$
   where $u_c \in [0,1]$ from a capacity noise sample and $\text{capNoiseScale} \in [0,1]$.
 
@@ -96,9 +96,9 @@ Canonical recommended implementation (hybrid):
 
 $$
 \begin{align*}
-C_{\text{base}} &= \text{table}(\text{tileType}, \text{resource}) \\
-u_c &= \frac{\text{Noise}(\text{seed}, x \cdot \text{freq}_{\text{cap}}, y \cdot \text{freq}_{\text{cap}}, \text{salt}_{\text{capacity}}) + 1}{2} \\
-	ext{capacity} &= \operatorname{round}\left(C_{\text{base}} \cdot (1 + \text{capNoiseScale} \cdot u_c) \cdot \text{biomeCapMultiplier}\right)
+ C_{\text{base}} &= \text{table}(\text{tileType}, \text{resource}) \\
+ u_c &= \frac{\text{Noise}(\text{seed}, x \cdot \text{freq}_{\text{cap}}, y \cdot \text{freq}_{\text{cap}}, \text{salt}_{\text{capacity}}) + 1}{2} \\
+ 	ext{capacity} &= \mathrm{round}\left(C_{\text{base}} \cdot (1 + \text{capNoiseScale} \cdot u_c) \cdot \text{biomeCapMultiplier}\right)
 \end{align*}
 $$
 
@@ -155,7 +155,7 @@ $$
 Update rule for $\text{resourceAmounts}$ (discrete tick):
 
 $$
-A_{t+1} = \operatorname{clamp}(A_t + R - \text{extracted},\ 0,\ C)
+A_{t+1} = \mathrm{clamp}(A_t + R - \text{extracted},\ 0,\ C)
 $$
 
 Notes:
@@ -306,21 +306,22 @@ See also: [Map Structure](./map-structure.md) and [Map Generation](./map-generat
 
 ## Glossary — key terms (implementation-ready)
 
-- **resourceRates**: Deterministic per-tile, per-resource generation rate (units/tick). Computed from `(seed,x,y)` using the noise → mapping formula. Stored as `tile.static.resourceRates`.
-- **resourceAmounts**: Mutable stored amount for a given resource on a tile (units). Stored as `tile.dynamic.resourceAmounts`. Range: `0..capacity`.
-- **capacity (C)**: Maximum storable units of a resource on a tile. Computed via `Cbase`, noise, and biome multipliers. See Capacity model and formula: `capacity = round(Cbase * (1 + capNoiseScale * u_c) * biomeCapMultiplier)`.
-- **extraction**: The act of removing `extracted` units from `resourceAmounts` per tick by an extractor. Formula: `extracted = min(requested, A_t, C * maxExtractFrac)` where `requested = P * eff * adjacencyFactor`.
-- **biome**: Large-scale environmental classification (e.g., `Forest`, `Desert`) that influences `resourceRates` via `biomeMultiplier` and capacity via `biomeCapMultiplier`.
-- **tileType**: Local terrain/material classification (e.g., `Plains`, `Rock`) determining `baseRanges` and `Cbase` used by generators.
-- **rate_base**: Intermediate computed base rate before biome/global multipliers: `Bmin + u_r * (Bmax - Bmin)`.
-- **rate_final (R)**: Final deterministic per-tick generation rate after multipliers and clamping: `rate_final = clamp(rate_base * biomeMultiplier * S, Bmin, Bmax*(1+maxBiomeBonus))`.
-- **Cbase**: Canonical base capacity value per `tileType` and `resource` from the `capacityBase` table.
-- **capNoiseScale**: Tunable scale (0..1) that controls how much capacity varies with noise (default 0.5 recommended).
-- **u_r / u_c**: Normalized noise samples in [0,1] used for rate (`u_r`) and capacity (`u_c`) calculations: `u = (Noise(...) + 1)/2`.
+
+- **resourceRates**: Deterministic per-tile, per-resource generation rate (units/tick). Computed from $ (\text{seed}, x, y) $ using the noise $\rightarrow$ mapping formula. Stored as $\text{tile.static.resourceRates}$.
+- **resourceAmounts**: Mutable stored amount for a given resource on a tile (units). Stored as $\text{tile.dynamic.resourceAmounts}$. Range: $0..\text{capacity}$.
+- **capacity (C)**: Maximum storable units of a resource on a tile. Computed via $C_{\text{base}}$, noise, and biome multipliers. See Capacity model and formula: $\text{capacity} = \mathrm{round}(C_{\text{base}} \cdot (1 + \text{capNoiseScale} \cdot u_c) \cdot \text{biomeCapMultiplier})$.
+- **extraction**: The act of removing $\text{extracted}$ units from $\text{resourceAmounts}$ per tick by an extractor. Formula: $\text{extracted} = \min(\text{requested}, A_t, C \cdot \text{maxExtractFrac})$ where $\text{requested} = P \cdot \text{eff} \cdot \text{adjacencyFactor}$.
+- **biome**: Large-scale environmental classification (e.g., $\text{Forest}$, $\text{Desert}$) that influences $\text{resourceRates}$ via $\text{biomeMultiplier}$ and capacity via $\text{biomeCapMultiplier}$.
+- **tileType**: Local terrain/material classification (e.g., $\text{Plains}$, $\text{Rock}$) determining $\text{baseRanges}$ and $C_{\text{base}}$ used by generators.
+- **rate_base**: Intermediate computed base rate before biome/global multipliers: $B_{\min} + u_r \cdot (B_{\max} - B_{\min})$.
+- **rate_final (R)**: Final deterministic per-tick generation rate after multipliers and clamping: $\text{rate}_{\text{final}} = \mathrm{clamp}(\text{rate}_{\text{base}} \cdot \text{biomeMultiplier} \cdot S, B_{\min}, B_{\max}(1+\text{maxBiomeBonus}))$.
+- **Cbase**: Canonical base capacity value per $\text{tileType}$ and $\text{resource}$ from the $\text{capacityBase}$ table.
+- **capNoiseScale**: Tunable scale $(0..1)$ that controls how much capacity varies with noise (default $0.5$ recommended).
+- **u_r / u_c**: Normalized noise samples in $[0,1]$ used for rate ($u_r$) and capacity ($u_c$) calculations: $u = (\text{Noise}(...) + 1)/2$.
 - **P**: Extractor nominal power (units/tick).
-- **eff**: Extractor efficiency multiplier (0 < eff <= 1).
-- **adjacencyFactor**: Penalty multiplier for extraction when extractor is not on the same tile. Default: `1.0` for d=0, `0.8` for d=1. Formula: `adjacencyFactor = max(0, 1 - 0.2 * d)`.
-- **maxExtractFrac**: Hard per-tick fraction of tile capacity allowed to be extracted (recommended default 0.10 = 10%).
+- **eff**: Extractor efficiency multiplier $(0 < \text{eff} \leq 1)$.
+- **adjacencyFactor**: Penalty multiplier for extraction when extractor is not on the same tile. Default: $1.0$ for $d=0$, $0.8$ for $d=1$. Formula: $\text{adjacencyFactor} = \max(0, 1 - 0.2 \cdot d)$.
+- **maxExtractFrac**: Hard per-tick fraction of tile capacity allowed to be extracted (recommended default $0.10 = 10\%$).
 
 ---
 
