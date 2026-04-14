@@ -1,7 +1,7 @@
 
-# Map Structure (Planned Model)
+# Map Structure
 
-This document defines the **canonical world tile model**, coordinate semantics, and the relationship between biomes, tile types, and resources for the planned multi-resource system.
+This document defines the **canonical world tile model**, coordinate semantics, and the relationship between biomes, tile types, and resources for the multi-resource system. Sections that are not fully implemented are under development and may change as the system evolves.
 
 ---
 
@@ -41,7 +41,7 @@ Tile properties are divided into **static** (deterministic, recomputable) and **
 
 ---
 
-## Canonical Biomes (Planned)
+## Canonical Biomes
 
 | Biome     | Description                        |
 |-----------|------------------------------------|
@@ -55,7 +55,7 @@ Tile properties are divided into **static** (deterministic, recomputable) and **
 
 ---
 
-## Canonical Tile Types (Planned)
+## Canonical Tile Types
 
 | Tile Type | Description                        |
 |-----------|------------------------------------|
@@ -75,7 +75,7 @@ Tile properties are divided into **static** (deterministic, recomputable) and **
 
 ---
 
-## Tile Type and Biome Relationship (Planned)
+## Tile Type and Biome Relationship
 
 - Each tile belongs to exactly one biome and one tile type.
 - Biome determines the dominant tile type distribution and resource bonuses.
@@ -84,7 +84,7 @@ Tile properties are divided into **static** (deterministic, recomputable) and **
 
 ---
 
-## Multi-Resource Model (Planned)
+## Multi-Resource Model
 
 Each tile has a `resourceRates` object specifying the per-resource generation rate (see [Resource Generation](./resource-generation.md)).
 
