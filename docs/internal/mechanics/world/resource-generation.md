@@ -1,11 +1,11 @@
-$$
-\mathrm{clamp}(\text{rate}_{\text{base}} \cdot \text{biomeMultiplier} \cdot S, B_{\min}, B_{\max} \cdot (1 + \text{maxBiomeBonus}))
-$$
-$$
-u_c = \frac{\text{Noise}(\text{seed}, x \cdot \text{freq}_{\text{cap}}, y \cdot \text{freq}_{\text{cap}}, \text{salt}_{\text{capacity}}) + 1}{2}
-$$
-$$
-\mathrm{round}(C_{\text{base}} \cdot (1 + \text{capNoiseScale} \cdot u_c) \cdot \text{biomeCapMultiplier})
+
+# Resource Generation — Deterministic & Implementation-ready
+
+This document provides explicit, implementation-ready formulas, tables, and worked examples for resource generation. Sections that are not fully implemented are under development and may change as the system evolves. Only genuinely speculative or idea features are marked as **FUTURE**.
+
+---
+
+## Summary (quick)
 - **resourceRates**: Deterministic per-tick generation rates computed from `(seed,x,y)` and noise. Units: units/tick.
 - **resourceAmounts**: Mutable stored amount on a tile (0..capacity), changed by extraction and regeneration. Units: units.
 - Core formulas, noise function, capacities, and extraction formulas are defined below for direct implementation.
