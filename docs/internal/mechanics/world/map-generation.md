@@ -1,29 +1,52 @@
 
 # Map Generation
 
-This document specifies the deterministic map and biome generation model, including the biome weight model, noise function, tile generation algorithm, and explicit mapping rules. Sections that are not fully implemented are under development and may change as the system evolves. Only genuinely speculative or idea features are marked as **FUTURE**.
-
-> **Canonical Resource Reference:** Base ranges, capacities, and biome multipliers are fully derivable from the formulas in [Resource Generation](./resource-generation.md). See that document for the canonical base range table, capacity table, and biome multiplier table.
+The world is built tile by tile from a single seed, using layered noise to determine temperature, biome, and terrain. This document explains how that process works — from latitude bands and biome weights through to tile type resolution and feature generation.
 
 ## Core Principle
 
-The world is generated using a **deterministic, seed-based system**:
-- A single seed defines the entire world.
-- Generation is pure and reproducible.
-- The same `(seed, x, y)` always produces the same result.
+The world is generated through a **deterministic, seed-based system**. A single seed defines the entire world, generation remains pure and reproducible, and the same `(seed, x, y)` always produces the same result. Generation has no side effects; tiles are persisted only after they are produced.
 
 ---
 
 ## Generation Model
 
 ### On-Demand World Generation
-- The world is generated procedurally as needed (on exploration, scan, or system request).
-- Infinite world size is supported by lazy, chunk-based expansion.
-- No randomness is used except as derived from the world seed.
+Infinite world size is supported by lazy, chunk-based expansion. The world is generated procedurally as needed during exploration, scanning, or other system requests, and every result is derived from the world seed rather than from runtime randomness.
 
-### Determinism Invariant
-- No side effects during generation.
-- Persistence only after generation.
+---
+
+## The Generation Pipeline
+
+1. A tile request arrives at `(seed, x, y)`, which fully defines the static generation inputs for that tile. Static tile properties are derived directly from those inputs, so no prior world state is required to compute them.
+
+2. Temperature is computed as
+
+$$
+T = \text{clamp}(T_{\text{eq}} - k \cdot |y| + A_{\text{temp}} \cdot u_{\text{temp}},\ 0,\ 1)
+$$
+
+where $u_{\text{temp}} \in [0,1]$ is value noise sampled at `freq_temp = 0.02`. This creates a strong latitudinal gradient while softening it with low-frequency irregularity.
+
+3. The two nearest latitude anchor bands are identified and blended into a per-tile biome weight vector. With anchors spaced every 20 tiles, the interpolation fraction is
+
+$$
+t = \frac{|y| - y_{\text{lo}}}{20}
+$$
+
+so a latitude between Mid and High inherits a smooth linear blend of those two rows.
+
+4. Feature signals are then sampled from river noise and elevation noise fields. A strong river contour forces the tile to Water, while elevation above the mountain threshold forces the biome to Mountain.
+
+5. Biome is resolved by a cumulative weighted draw using $r = \text{hash2d}(x, y, \text{seed}+\text{":biome"})$ against the interpolated biome weights. Feature overrides take precedence over that draw.
+
+6. Tile type is resolved by a second weighted draw from the selected biome's tile-type distribution row, using $r = \text{hash2d}(x, y, \text{seed}+\text{":tiletype"})$. This keeps biome identity and surface composition deterministic but decorrelated.
+
+7. A high-frequency local variation pass refines the base result with small micro-features. This final pass preserves the large-scale biome structure while preventing repetitive local patterns.
+
+8. Resource rates are computed deterministically from the resolved biome and tile type, as described in [Resource Generation](./resource-generation.md). Resource output therefore follows from the same seed-derived world state as the terrain itself.
+
+9. The tile is persisted after generation. Subsequent reads return the stored result, preserving consistency between first discovery and later access.
 
 ---
 
@@ -34,19 +57,35 @@ Temperature is the primary driver of biome distribution.
 ### Base Gradient
 - Temperature is highest at `y = 0` (equator).
 - Temperature decreases as $|y|$ increases (toward poles).
-- Temperature formula (to be specified):
+- Temperature follows the base formula:
 
 $$
-T(y) = T_{\text{eq}} - k \cdot |y| + N_{\text{temp}}(\text{seed}, x, y)
+T = \text{clamp}(T_{\text{eq}} - k \cdot |y| + A_{\text{temp}} \cdot u_{\text{temp}},\ 0,\ 1)
 $$
 
-where $T_{\text{eq}}$ is equatorial temperature, $k$ is the gradient constant, and $N_{\text{temp}}$ is seed-derived noise variation.
+where $T_{\text{eq}}$ is equatorial temperature, $k$ is the gradient constant, $A_{\text{temp}}$ is the temperature noise amplitude, and $u_{\text{temp}}$ is normalized seed-derived noise.
 
-> **FUTURE:** The exact values of $T_{\text{eq}}$, $k$, and the noise parameters will be specified when the temperature system is implemented.
+| Constant | Value | Notes |
+|---|---|---|
+| $T_{\text{eq}}$ | 1.0 | Normalized equatorial temperature |
+| $k$ | 0.015 per tile | Gradient rate toward poles |
+| $A_{\text{temp}}$ | 0.12 | Noise amplitude on T |
+| `freq_temp` | 0.02 | Spatial frequency (already in Noise Parameters) |
+
+| Latitude band | $\|y\|$ | Base $T$ |
+|---|---|---|
+| Equator | 0 | 1.00 |
+| Mid | ±20 | 0.70 |
+| High | ±40 | 0.40 |
+| Polar | ±60+ | 0.10 |
+
+These base values are warped by noise with amplitude 0.12, so biome boundaries shift by up to roughly 8 tiles and form natural irregular edges.
 
 ### Noise Variation
 - Seed-based noise is added to temperature to create irregular biome boundaries.
 - Prevents straight lines and creates natural transitions.
+
+The temperature value $T$ determines which two anchor bands in the biome weight table are blended. A tile at $|y| = 30$ sits halfway between the Mid (±20) and High (±40) anchors, so its weight vector is the average of those two rows. This approach lets $T$'s noise perturbation naturally shift biome boundaries without separate logic.
 
 ---
 
@@ -57,17 +96,7 @@ Biomes are determined by:
 - Seed-based noise (secondary)
 - Feature generators (e.g., rivers, mountains)
 
-### Canonical Biome Set
-
-| Biome     | Description                        |
-|-----------|------------------------------------|
-| Ocean     | Deep water, islands                |
-| Desert    | Hot, arid, sandy                   |
-| Jungle    | Dense, humid, lush                 |
-| Forest    | Temperate, wooded                  |
-| Temperate | Mixed grassland/forest             |
-| Tundra    | Cold, sparse, icy                  |
-| Mountain  | High elevation, rocky, cold        |
+The world's seven biomes are described fully in [Map Structure](./map-structure.md).
 
 ### Biome Weight Model
 
@@ -80,18 +109,29 @@ Each latitude band (`y`) has a **biome weight vector** specifying the probabilit
 | High (±40)        | 0.15  | 0.05   | 0.05   | 0.20   | 0.25      | 0.20   | 0.10     |
 | Polar (±60+)      | 0.20  | 0.00   | 0.00   | 0.10   | 0.10      | 0.50   | 0.10     |
 
-**Notes:**
-- Actual biome is selected by weighted random (deterministic via seed+coords) within the band, with local noise.
-- Feature generators (e.g., rivers, mountains) can override the base biome.
+Biome selection within a band is a deterministic weighted draw from `(seed, x, y)`, with noise applied before sampling. Feature generators such as rivers and mountain ranges can override the result.
+
+### Band Interpolation and Biome Draw
+
+The biome weight table has four discrete anchor points; real coordinates require smooth interpolation between them. For a tile at $|y|$:
+
+$$
+y_{\text{lo}} = \left\lfloor |y| / 20 \right\rfloor \times 20, \quad t = \frac{|y| - y_{\text{lo}}}{20}
+$$
+
+The weight vector $\mathbf{w}$ is the element-wise linear blend of the two nearest anchor rows:
+
+$$
+\mathbf{w} = (1-t) \cdot \mathbf{w}_{y_{\text{lo}}} + t \cdot \mathbf{w}_{y_{\text{lo}}+20}
+$$
+
+Biome is then selected by a deterministic weighted draw: build the prefix sum of $\mathbf{w}$, then find the first biome index $i$ where prefix$_i > r$ and $r = \text{hash2d}(x, y, \text{seed}+\text{":biome"}) \in [0,1)$.
 
 ---
 
 ## Tile Type Resolution
 
-Tile type is determined by:
-1. Biome (primary)
-2. Local noise variation (secondary)
-3. Feature generators (e.g., rivers, mountains)
+Tile type is determined first by biome, then by local noise variation, with feature generators such as rivers and mountains able to override the base result.
 
 ### Canonical Tile Type Distribution by Biome
 
@@ -105,24 +145,22 @@ Tile type is determined by:
 | Tundra    | 0.10   | 0.00 | 0.05   | 0.00  | 0.10 | 0.05     | 0.05  | 0.00 | 0.65 |
 | Mountain  | 0.05   | 0.00 | 0.01   | 0.00  | 0.30 | 0.60     | 0.01  | 0.01 | 0.02 |
 
-**Notes:**
-- Probabilities sum to `1.0` per biome.
-- Actual tile type is selected by deterministic weighted random (seed+coords).
+Within each biome, the final tile type is selected by a deterministic weighted draw from the seed and tile coordinates.
+
+Tile type is drawn by the same mechanism as biome: a prefix-sum walk against $r = \text{hash2d}(x, y, \text{seed}+\text{":tiletype"})$ over the biome's row in the table above. Feature generators fire before this draw and replace the result entirely when their threshold is met; a River override always produces Water, while a Mountain override produces Mountain or Rock depending on elevation strength.
 
 ---
 
 ## Feature Generation
 
 ### Rivers
-- Generated using noise bands or flow algorithms.
-- Form long, connected `water` paths, crossing multiple biomes.
-- Become `ice` rivers in Tundra/Ice biomes at low temperature.
+River placement is driven by a smooth noise field sampled at medium scale. The contour line at value 0.5 of that field forms a continuous path across the map; any tile whose noise value falls within a narrow band around this line (the river band) is classified as Water, regardless of the biome draw. The river band width controls river width: narrower values produce winding channels, wider values produce broader river valleys. In cold regions ($T < T_{\text{ice}}$), river tiles are converted to Ice, preserving the river's path on the surface.
 
 ### Mountains
-- Large-scale mountain ranges generated by banded noise and feature overlays.
+Mountain ranges emerge from a large-scale elevation noise field. Tiles where elevation exceeds a high threshold are assigned the Mountain biome, overriding the biome draw. Within Mountain biome, a second threshold separates peak tiles (Mountain type) from slope tiles (Rock type). Because elevation is a smooth noise field, mountain ranges form elongated ridges rather than isolated points, with rocky foothills surrounding the central peaks.
 
 ### Local Variation
-- Small-scale noise adds micro-features and diversity.
+After biome and base tile type are resolved, a high-frequency local variation pass introduces small-scale diversity: isolated rock outcrops in plains, occasional water pockets in forests, and forest patches in temperate grasslands. This final layer is the last override before resource rates are computed.
 
 ---
 
@@ -138,87 +176,17 @@ Resource generation is biome- and tile-dependent. Each tile is initialized with 
 - Noise functions (e.g., Perlin, Simplex) are used for temperature, biome, and tile type variation.
 - Coordinate transforms (e.g., banding, warping) are used to create natural-looking world features.
 
-### Implementation-ready noise guidance
+### Noise Parameters
 
-- **Noise function**: Use a seedable Simplex or OpenSimplex noise implementation that returns values in `[-1, 1]`. Name it `Noise(seed, x, y, salt)`.
-- **Normalization**: convert to `[0,1]` via `u = (Noise(...) + 1) / 2`.
-- **Resource noise salts**: use separate salts per resource (e.g. `salt_iron`, `salt_carbon`) to avoid strong cross-resource correlation.
-- **Frequencies**: store per-purpose frequencies (example defaults):
-  - `freq_temp = 0.02` (large-scale temperature features)
-  - `freq_biome = 0.05`
-  - `freq_tile = 0.08`
-  - `freq_resource_iron = 0.08`
-  - `freq_resource_carbon = 0.12`
-  - `freq_capacity = 0.04`
+A seedable Simplex or OpenSimplex noise function returning values in `[-1, 1]` fits the model well, expressed here as `Noise(seed, x, y, salt)`. That output is normalized to `[0,1]` with `u = (Noise(...) + 1) / 2`, and separate salts per resource such as `salt_iron` and `salt_carbon` help prevent strong cross-resource correlation.
 
-### Mapping noise → resource rates (summary)
-
-Implementers should call the mapping formula described in [Resource Generation](./resource-generation.md):
-
-1. Sample resource noise: `u_r = (Noise(seed, x*freq_resource, y*freq_resource, salt_resource) + 1)/2`
-2. `rate_base = Bmin + u_r * (Bmax - Bmin)`
-3. `rate_final = clamp(rate_base * biomeMultiplier * S, Bmin, Bmax*(1+maxBiomeBonus))`
-
-Use the canonical `baseRanges` table in [Resource Generation](./resource-generation.md).
-
----
-
-## Capacity & Regeneration (explicit formulas)
-
-Implementers should compute tile capacities and apply regeneration each tick using the following explicit formulas.
-
-Capacity (per tile, per resource):
-
-$$
-\begin{align*}
-C_{\text{base}} &= \text{capacityBase}[\text{tileType}][\text{resource}] \\
-u_c &= \frac{\text{Noise}(\text{seed}, x \cdot \text{freq}_{\text{capacity}}, y \cdot \text{freq}_{\text{capacity}}, \text{salt}_{\text{capacity}}) + 1}{2} \\
-\text{capacity} &= \mathrm{round}\left(C_{\text{base}} \cdot (1 + \text{capNoiseScale} \cdot u_c) \cdot \text{biomeCapMultiplier}\right)
-\end{align*}
-$$
-
-Recommended defaults: $\text{capNoiseScale} = 0.5$, $\text{freq}_{\text{capacity}} = 0.04$.
-
-Regeneration per tick (apply to $\text{resourceAmounts}$):
-
-$$
-\begin{align*}
-R &= \text{computeResourceRate}(\text{seed}, x, y, \text{tileType}, \text{resource}) \\
-A_{t+1} &= \mathrm{clamp}(A_t + R,\ 0,\ \text{capacity})
-\end{align*}
-$$
-
-When extraction occurs in the same tick, the combined update becomes:
-
-$$
-\begin{align*}
-\text{extracted} &= \min(\text{requested},\ A_t,\ \text{capacity} \cdot \text{maxExtractFrac}) \\
-A_{t+1} &= \mathrm{clamp}(A_t + R - \text{extracted},\ 0,\ \text{capacity})
-\end{align*}
-$$
-
-Worked example (capacity + regen):
-- Tile: Rock, Iron `Cbase = 3000`
-- Seed capacity noise sample: `Noise(...) = -0.2 => u_c = 0.4`
-- `capNoiseScale = 0.5`, `biomeCapMultiplier = 1.0`
-- `capacity = round(3000 * (1 + 0.5 * 0.4) * 1.0) = round(3000 * 1.2) = 3600`
-- From Resource Generation: `R = 6.545` units/tick
-- Current amount `A_t = 1500`, extractor requests `25` units as in example
-- `extracted = min(25, 1500, 3600*0.10=360) = 25`
-- `A_{t+1} = clamp(1500 + 6.545 - 25, 0, 3600) = 1481.545`
-
-Store `capacity` in the tile's persisted metadata only if needed for performance; it can be recomputed deterministically on demand.
-
----
-
-### Worked mapping example (connector)
-
-This is the same worked example referenced in [Resource Generation](./resource-generation.md) but shown here in the generation flow:
-
-- Determine `tileType` from biome + tile noise.
-- Lookup `Bmin/Bmax` for the `tileType + resource`.
-- Sample resource noise with salt and frequency.
-- Compute `rate_final` and attach to the tile's `resourceRates` static object.
+Per-purpose frequencies keep large-scale and local patterns distinct. Example defaults:
+- `freq_temp = 0.02` (large-scale temperature features)
+- `freq_biome = 0.05`
+- `freq_tile = 0.08`
+- `freq_resource_iron = 0.08`
+- `freq_resource_carbon = 0.12`
+- `freq_capacity = 0.04`
 
 ---
 
@@ -230,28 +198,15 @@ This is the same worked example referenced in [Resource Generation](./resource-g
 
 ---
 
-## Regeneration Safety and Migration Concerns
+## Edge Cases
 
-- Regeneration must preserve determinism and player data.
-- Migration tools may be needed for map upgrades or seed changes.
-
----
-
-## Edge Cases and Special Rules
-
-- Tiles at biome boundaries use the dominant biome for bonuses and type selection.
-- Feature generators can override base biome/tile type.
-- If a tile's type is not buildable, extraction may occur from adjacent tiles (see [Resource Generation](./resource-generation.md)).
+- Feature generators (rivers, mountain ranges) may override the biome or tile type produced by the base noise. These overrides compose deterministically with the seed.
 
 ---
 
 ## Future / Planned Features
-
-- **Temporal biome migration**: Biome boundaries may shift over long time spans, altering biome selection and downstream resource multipliers.
-- **Regional state influence**: Global or regional events may temporarily modify regeneration or biome/resource modifiers for bounded durations.
-- **Non-deterministic player-driven changes**: Any system that breaks strict seed determinism must be explicitly gated and backed by migration tooling.
-- **Dynamic world events**: Temporary biome or resource changes (e.g. volcanic eruption, flood).
 - **Procedural landmarks**: Unique, rare world features (e.g. craters, ancient ruins).
+- **Moisture axis**: A second noise axis (humidity) alongside temperature could differentiate Desert from Jungle or Tundra from Forest at the same latitude, adding further strategic diversity to biome distribution.
 
 ---
 
@@ -261,12 +216,13 @@ This is the same worked example referenced in [Resource Generation](./resource-g
 
 ---
 
-## Glossary — key terms (implementation-ready)
+## Glossary
 
 - **Noise(seed,x,y,salt)**: Seeded noise function returning `[-1,1]`; normalize with `(Noise+1)/2`.
 - **freq_***: Frequency multiplier used when sampling noise for different systems (temp/biome/tile/resource/capacity).
-- **biomeMultiplier**: Per-biome, per-resource multiplier applied to `rate_base` to produce `rate_final`.
-- **biomeCapMultiplier**: Per-biome multiplier applied to capacity calculation.
-- **capacityBase (Cbase)**: Base capacity table used in computing `capacity`.
-- **Regeneration (R)**: Same as `rate_final`; amount added to `resourceAmounts` each tick (before extraction application in the same tick).
+- **hash2d(x, y, seedText)**: Deterministic float in `[0, 1)` derived from coordinate and seed string via FNV-1a-like hash. Used as the draw value in biome and tile type selection.
+- **elevation noise**: Large-scale noise field driving mountain range placement. Tiles above a high threshold override biome/tile type to Mountain or Rock.
+- **river band**: Narrow contour around the 0.5 iso-line of the river noise field. Tiles within this band become Water (or Ice in cold regions).
+- **band interpolation**: Linear blend of the two nearest latitude anchor rows in the biome weight table, parameterised by $t = (|y| - y_{\text{lo}}) / 20$.
+- **T**: Normalized temperature in $[0, 1]$, highest at the equator, decreasing toward poles, warped by noise.
 - **feature generator override**: A generator result (e.g. river or mountain feature) that explicitly overrides local biome/tileType selection. Feature overrides must compose deterministically with base noise.
