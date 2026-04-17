@@ -25,9 +25,11 @@ Given a tile type's base range `[Bmin, Bmax]`, a normalized noise sample $u_r$, 
 
 $$\text{rate}_{\text{base}} = B_{\min} + u_r \cdot (B_{\max} - B_{\min})$$
 
-$$\text{rate}_{\text{final}} = \mathrm{clamp}(\text{rate}_{\text{base}} \cdot m \cdot S,\ B_{\min},\ B_{\max} \cdot (1 + \text{maxBiomeBonus}))$$
+$$\text{rate}_{\text{final}} = \min(\text{rate}_{\text{base}} \cdot m \cdot S,\ B_{\max})$$
 
-Clamping ensures biome bonuses cannot push rates above a safe upper bound.
+`rate_base` is already in `[Bmin, Bmax]` by construction, so it is never negative. Biome multipliers and the global scaling factor are constrained to `≥ 0`, which means `rate_final` is always `≥ 0` and never requires a lower clamp. The `min(…, Bmax)` cap prevents heavily boosted biomes from pushing rates above the tile type's confirmed maximum.
+
+Biome multipliers less than `1.0` intentionally reduce the effective rate below `Bmin`. This is the mechanism for tile depletion: when `rate_final` is low relative to extraction, the tile's stored amount (`resourceAmounts`) decreases each tick. When `rate_final` reaches `0` (for example, via a multiplier of `0` or `S = 0`), the tile regenerates nothing and will fully deplete once its stored resources are extracted. This keeps depletion a natural consequence of sustained heavy extraction in hostile biomes rather than requiring a separate depletion system.
 
 ---
 
