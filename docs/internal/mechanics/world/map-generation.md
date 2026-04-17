@@ -198,6 +198,59 @@ Per-purpose frequencies keep large-scale and local patterns distinct. Example de
 
 ---
 
+## Spawn Point Assignment
+
+Player spawn points are not generated on demand — they are pre-selected before the game begins from the already-generated world and then partially overwritten to guarantee fairness.
+
+### Spawn Biome Whitelist
+
+A spawn candidate is only valid if its biome is on the **spawn whitelist**. Biomes are classified into three resource richness tiers based on the sum of their four per-resource biome multipliers (`Σm`). Only **Moderate** biomes are spawn-eligible; Rich biomes give spawning players a structural advantage, and Poor biomes give a structural disadvantage.
+
+| Tier     | Σm range       | Rule           |
+|----------|----------------|----------------|
+| Rich     | > 4.25         | Not spawn eligible |
+| Moderate | 3.75 – 4.25    | **Spawn eligible** |
+| Poor     | < 3.75         | Not spawn eligible |
+
+Current biome classifications:
+
+| Biome     | Σ multipliers | Tier     | Spawn eligible |
+|-----------|--------------|----------|----------------|
+| Forest    | 3.95         | Moderate | ✓              |
+| Temperate | 4.00         | Moderate | ✓              |
+| Desert    | 3.95         | Moderate | ✓              |
+| Jungle    | 3.75         | Moderate | ✓              |
+| Tundra    | 3.60         | Poor     | ✗              |
+| Mountain  | 3.45         | Poor     | ✗              |
+| Ocean     | 2.60         | Poor     | ✗              |
+
+> **Balance invariant:** If biome multipliers in [Resource Generation](./resource-generation.md) are tuned, the Σm values above must be rechecked. Any biome that crosses a tier boundary (e.g. Forest pushing past 4.25 into Rich) should have its spawn eligibility updated accordingly.
+
+### Spawn Tile Override
+
+When a player is assigned a spawn point, the exact tile at that coordinate has its **entire generated profile overwritten** with a standardised *Starter Tile* spec regardless of what the seed produced there:
+
+- Fixed, balanced resource generation rates across all four resources.
+- Depletion factors reset to `D_r = 1.0` for all resources; reserves set to full.
+- Fixed capacity matching the Starter Tile spec.
+- Tile type set to a neutral traversable type (Plains by default).
+
+Every player receives an identical Starter Tile, so the spawn tile itself offers no inter-player advantage. The Starter Tile spec is a global game configuration value, not derived from the seed.
+
+### Surrounding Tiles
+
+Only the exact spawn coordinate is overwritten. All adjacent and further tiles remain as seed-generated. Spawn biome selection (whitelist above) is the mechanism that ensures surrounding terrain is broadly comparable in resource value across all player spawn regions — not per-tile normalisation.
+
+### Placement Algorithm
+
+1. Enumerate all tiles in the world whose biome is on the spawn whitelist and whose tile type is traversable (not Water, not Ice, not Oil tile).
+2. For each candidate, compute the aggregate resource generation rate of tiles within a configurable `spawnEvalRadius` (default `5`).
+3. From the filtered candidates, select spawn points such that no two players are within `minSpawnDistance` tiles of each other (default configurable; at minimum larger than `spawnEvalRadius`).
+4. Among valid placement sets, prefer sets where the per-candidate aggregate resource scores are as equal as possible (minimise variance across candidates).
+5. Overwrite the selected tiles with the Starter Tile profile.
+
+---
+
 ## Edge Cases
 
 - Feature generators (rivers, mountain ranges) may override the biome or tile type produced by the base noise. These overrides compose deterministically with the seed.
@@ -221,6 +274,9 @@ Per-purpose frequencies keep large-scale and local patterns distinct. Example de
 - **Noise(seed,x,y,salt)**: Seeded noise function returning `[-1,1]`; normalize with `(Noise+1)/2`.
 - **freq_***: Frequency multiplier used when sampling noise for different systems (temp/biome/tile/resource/capacity).
 - **hash2d(x, y, seedText)**: Deterministic float in `[0, 1)` derived from coordinate and seed string via FNV-1a-like hash. Used as the draw value in biome and tile type selection.
+- **spawnEvalRadius**: Radius (in tiles) used when scoring spawn candidates for surrounding resource balance. Default `5`.
+- **minSpawnDistance**: Minimum tile distance enforced between any two player spawn points.
+- **Starter Tile**: A fixed, game-config-defined tile profile applied to the exact spawn coordinate for every player, overwriting all seed-generated stats.
 - **elevation noise**: Large-scale noise field driving mountain range placement. Tiles above a high threshold override biome/tile type to Mountain or Rock.
 - **river band**: Narrow contour around the 0.5 iso-line of the river noise field. Tiles within this band become Water (or Ice in cold regions).
 - **band interpolation**: Linear blend of the two nearest latitude anchor rows in the biome weight table, parameterised by $t = (|y| - y_{\text{lo}}) / 20$.
