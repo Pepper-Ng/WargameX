@@ -210,7 +210,7 @@ Deficit consequences and timing are defined in [Economy: Upkeep](./upkeep.md).
 
 | Topic | Confirmed rule |
 | --- | --- |
-| Base resource set | Carbon, iron, crystal, oil |
+| Base resource set | Carbon, Iron, Crystal, Oil |
 | Resource tiers | Raw (4), Refined (3), Advanced (2), plus Credits - 10 total |
 | Processing chain depth | Two tiers (raw → refined → advanced) |
 | Credits scope | Global per player |
