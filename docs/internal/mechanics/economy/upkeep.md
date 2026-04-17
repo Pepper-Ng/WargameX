@@ -1,6 +1,6 @@
 # Economy: Upkeep
 
-This document defines how ongoing resource costs are paid in WargameX, which storage pool each upkeep domain draws from, what happens when upkeep cannot be paid, and how systems recover after resupply.
+This document defines how ongoing resource costs are paid in Wargame X, which storage pool each upkeep domain draws from, what happens when upkeep cannot be paid, and how systems recover after resupply.
 
 Quantitative values such as per-tick upkeep costs, unit cargo capacities, attrition rates, and building throttling magnitudes are defined in subsystem documents rather than here.
 
