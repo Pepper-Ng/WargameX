@@ -92,7 +92,6 @@ The two effects are independent and additive. Combat readiness lost to attrition
 ## Future / Planned
 
 - **Zone of control**: Whether and how enemy adjacency restricts or penalises movement (closely tied to combat mechanics; will be designed alongside them).
-- **Mixed-force movement type resolution**: Detailed rules for forces that combine unit types with different movement capabilities.
 - **Terrain attrition thresholds and readiness model**: Specific numeric rates for supply attrition decay and terrain penalty accumulation, to be defined with the combat system.
 
 ---
