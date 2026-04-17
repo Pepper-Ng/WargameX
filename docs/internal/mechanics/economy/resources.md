@@ -138,7 +138,7 @@ If a base has no remaining capacity for a resource, additional extraction for th
 
 ## Resource Movement (Logistics)
 
-There is no instant resource transfer in WargameX. All resource movement requires physical transport across the map.
+There is no instant transfer of physical (non-credit) resources in WargameX. All movement of physical resources requires transport across the map.
 
 ### Core Rules
 
