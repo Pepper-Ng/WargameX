@@ -1,6 +1,6 @@
 # Wargame X Backend Prototype
 
-Minimal and extensible Node.js backend for the browser-based RTS prototype **Wargame X**.
+Minimal and extensible Node.js backend for the browser-based wargame prototype **Wargame X**.
 
 This project currently includes:
 - basic player registration/login
