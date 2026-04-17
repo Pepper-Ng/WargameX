@@ -202,29 +202,16 @@ Per-purpose frequencies keep large-scale and local patterns distinct. Example de
 
 Player spawn points are not generated on demand — they are pre-selected before the game begins from the already-generated world and then partially overwritten to guarantee fairness.
 
-### Spawn Biome Whitelist
 
-A spawn candidate is only valid if its biome is on the **spawn whitelist**. Biomes are classified into three resource richness tiers based on the sum of their four per-resource biome multipliers (`Σm`). Only **Moderate** biomes are spawn-eligible; Rich biomes give spawning players a structural advantage, and Poor biomes give a structural disadvantage.
+### Spawn Biome Eligibility Rule
 
-| Tier     | Σm range       | Rule           |
-|----------|----------------|----------------|
-| Rich     | > 4.25         | Not spawn eligible |
-| Moderate | 3.75 – 4.25    | **Spawn eligible** |
-| Poor     | < 3.75         | Not spawn eligible |
+A biome is a valid spawn candidate if it is classified as having **Moderate resource richness**. Biomes are classified into three resource richness tiers based on the sum of their four per-resource biome multipliers (`Σm`):
 
-Current biome classifications:
+- **Rich**: Σm > 4.25 — not spawn eligible (structural advantage)
+- **Moderate**: 3.75 ≤ Σm ≤ 4.25 — **spawn eligible**
+- **Poor**: Σm < 3.75 — not spawn eligible (structural disadvantage)
 
-| Biome     | Σ multipliers | Tier     | Spawn eligible |
-|-----------|--------------|----------|----------------|
-| Forest    | 3.95         | Moderate | ✓              |
-| Temperate | 4.00         | Moderate | ✓              |
-| Desert    | 3.95         | Moderate | ✓              |
-| Jungle    | 3.75         | Moderate | ✓              |
-| Tundra    | 3.60         | Poor     | ✗              |
-| Mountain  | 3.45         | Poor     | ✗              |
-| Ocean     | 2.60         | Poor     | ✗              |
-
-> **Balance invariant:** If biome multipliers in [Resource Generation](./resource-generation.md) are tuned, the Σm values above must be rechecked. Any biome that crosses a tier boundary (e.g. Forest pushing past 4.25 into Rich) should have its spawn eligibility updated accordingly.
+If biome multipliers in [Resource Generation](./resource-generation.md) are tuned, the tier boundaries must be rechecked to ensure only Moderate biomes remain spawn eligible.
 
 ### Spawn Tile Override
 
