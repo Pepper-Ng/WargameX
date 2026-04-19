@@ -481,7 +481,7 @@ Example: A tank costs 6 Steel. Without Steel refining capability, the player cou
 | **Natural tech tree.** Without substitution, the refining chain creates organic progression: raw-only → build foundry → Steel units → build factory → Electronics units → build advanced factory → Composite/Plasma units. Each building investment unlocks new capabilities. With substitution, progression is just "things get cheaper," which feels less meaningful. | **High** |
 | **Worth should be emergent, not mechanical.** Hard-coding a 1.5× premium bakes resource worth into game rules. The design intent (§2) is for worth to emerge from supply/demand. Substitution locks a specific exchange rate into the system, reducing economic dynamism. | **High** |
 | **Refineries become strategically important.** Without substitution, an Electronics factory is a critical asset — destroy it and the enemy loses access to Electronics-gated units entirely. With substitution, destroying a factory only makes production 33% more expensive. The strategic stakes are fundamentally different. | **High** |
-| **Trade emerges naturally from scarcity.** A player without Crystal can trade surplus Carbon or Oil for Crystal or Electronics with a player who has them. This creates richer player interaction than a flat premium substitute. Trading refined goods is a natural gameplay mode that substitution undermines. | **High** |
+| **Trade emerges naturally from scarcity.** A player without an Electronics factory can trade surplus Carbon or Oil or Crystal for Electronics with a player who has them. This creates richer player interaction than a flat premium substitute. Trading refined goods is a natural gameplay mode that substitution undermines. | **High** |
 | **Consistency with design philosophy.** The game's distributed-storage model, physical logistics, and per-base upkeep (resources.md, upkeep.md) are all designed to make resource management a core strategic layer. Adding a substitution shortcut works against this design pillar. | **High** |
 | **The complexity concern is addressable through UI.** Good resource chain visualization, production queue management, and storage overviews make 9 resources manageable. The solution to complexity is UI clarity, not mechanical shortcuts. | Moderate |
 
@@ -501,7 +501,7 @@ The arguments against substitution are systematically stronger:
 
 1. **The natural tech tree is the single strongest argument.** Access to refining creates a progression curve that feels earned — players invest in infrastructure and unlock new capabilities. This is more engaging than "the same thing but cheaper."
 
-2. **Strategic depth from scarcity.** Without substitution, a player lacking Crystal must trade, expand, or do without Electronics. This creates meaningful strategic decisions. With substitution, Crystal scarcity just means "things cost 1.5× more," which is a pricing difference, not a strategic one.
+2. **Strategic depth from scarcity.** Without substitution, a player lacking Electronics production must trade, expand, or do without Electronics. This creates meaningful strategic decisions. With substitution, this just means "things cost 1.5× more," which is a pricing difference, not a strategic one.
 
 3. **Refinery targeting.** Refineries as critical infrastructure adds a layer of strategic gameplay: protecting your factories, raiding enemy factories, and rebuilding after losses all become important. This layer disappears with substitution.
 
